@@ -1,9 +1,6 @@
 let myColor;
 let connected = false;
 
-let colour;
-
-
 let sprite_sheet;
 
 function preload() {
@@ -26,41 +23,44 @@ function setup() {
 
 let x = 0;
 let y = 0;
+let players = {};
+let myId = null;
+
 function draw() {
     push();
     clear();
+    // animation(sprite_sheet, x, y);
+    if (keyIsDown(UP_ARROW) || keyIsDown(87)) y -= 1;
+    if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) y += 1;
+    if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) x -= 1;
+    if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) x += 1;
+
+    if (keyIsDown(16)) { // shift speed boost
+        if (keyIsDown(UP_ARROW) || keyIsDown(87)) y -= 1;
+        if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) y += 1;
+        if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) x -= 1;
+        if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) x += 1;
+    };
+
+    for (let id in players) {
+	if (id !== myId) {
+            push();
+            fill(players[id].color);
+            animation(sprite_sheet, players[id].x, players[id].y);
+            pop();
+	};
+    }
+
     animation(sprite_sheet, x, y);
-     if (keyIsDown(UP_ARROW) === true || keyIsDown(87)) {
-	// sendMessage({ dir: 'up', state: 'pressed' });
-            y -= 1;
-    }  if (keyIsDown(DOWN_ARROW) === true || keyIsDown(83)) {
-	// sendMessage({ dir: 'down', state: 'pressed' });
-            y += 1;
-    }  if (keyIsDown(LEFT_ARROW) === true || keyIsDown(65)) {
-	// sendMessage({ dir: 'left', state: 'pressed'});
-            x -= 1;
-    }  if (keyIsDown(RIGHT_ARROW) === true || keyIsDown(68)) {
-	// sendMessage({ dir: 'right', state: 'pressed'});
-            x += 1;
-    }
-    if (keyIsDown(UP_ARROW) === true || keyIsDown(87) && keyIsDown(16)) {
-        // sendMessage({ dir: 'up', state: 'pressed' });
-        y -= 2;
-    }  if (keyIsDown(DOWN_ARROW) === true || keyIsDown(83) && keyIsDown(16)) {
-        // sendMessage({ dir: 'down', state: 'pressed' });
-        y += 2;
-    }  if (keyIsDown(LEFT_ARROW) === true || keyIsDown(65) && keyIsDown(16)) {
-        // sendMessage({ dir: 'left', state: 'pressed'});
-        x -= 2;
-    }  if (keyIsDown(RIGHT_ARROW) === true || keyIsDown(68) && keyIsDown(16)) {
-        // sendMessage({ dir: 'right', state: 'pressed'});
-        x += 2;
-    }
-    pop();
+
+    sendMessage({x, y, color: myColor.toString()  });
+
 }
+
 
 // onConnection
 function onConnection(uid) {
+    myId = uid;
     console.log("i am connected as", uid);
 }
 
@@ -74,30 +74,20 @@ function connectReceived(otherId) {
 
 function disconnectReceived(otherId) {
     console.log("another sketch disconnected", otherId);
+    delete players[otherId];
 }
 
 function messageReceived(data, uid) {
     console.log("messageReceived", data, uid);
-    if (typeof data === "object") {
-	let localColor = data.color || color(100);
-	push();
-	fill(localColor);
-
-
-	clear();
-	background(255);
-	fill(myColor);
-	draw();
-	pop();
+    if (!players[uid]) {
+        players[uid] = {
+	    x: data.x,
+	    y: data.y,
+	    color: color(data.color)
+        };
+    } else {
+        players[uid].x = data.x;
+        players[uid].y = data.y;
+        players[uid].color = color(data.color);
     }
-}
-
-
-
-function mousePressed() {
-    sendMessage({
-	x: mouseX,
-	y: mouseY,
-	color: myColor.toString(),
-    });
 }
