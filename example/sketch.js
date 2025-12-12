@@ -14,7 +14,7 @@ function setup() {
     // connect to an instance of github.com/abachman/p5-websocket-server locally
     // connectWebsocket("ws://172.22.1.96:4004/p5.websocket-dev");
     // or the current reference server at wss://chat.reasonable.systems
-    connectWebsocket("wss://chat.reasonable.systems/p5.websocket-dev");
+    connectWebsocket("ws:chat.reasonable.systems/p5.websocket-dev");
 
     noStroke();
     fill(255);
