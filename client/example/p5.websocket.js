@@ -2881,12 +2881,14 @@ function useColors() {
     if (typeof window !== 'undefined' && window.process && (window.process.type === 'renderer' || window.process.__nwjs)) return true;
     // Internet Explorer and Edge do not support colors.
     if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) return false;
+    let m;
     // Is webkit? http://stackoverflow.com/a/16459606/376773
     // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
+    // eslint-disable-next-line no-return-assign
     return typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || // Is firebug? http://stackoverflow.com/a/398120/376773
     typeof window !== 'undefined' && window.console && (window.console.firebug || window.console.exception && window.console.table) || // Is firefox >= v31?
     // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-    typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31 || // Double check webkit in userAgent just in case we are in a worker
+    typeof navigator !== 'undefined' && navigator.userAgent && (m = navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/)) && parseInt(m[1], 10) >= 31 || // Double check webkit in userAgent just in case we are in a worker
     typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
 }
 /**
@@ -2942,7 +2944,7 @@ function useColors() {
  */ function load() {
     let r;
     try {
-        r = exports.storage.getItem('debug');
+        r = exports.storage.getItem('debug') || exports.storage.getItem('DEBUG');
     } catch (error) {
     // Swallow
     // XXX (@Qix-) should we be logging these?
@@ -3107,15 +3109,43 @@ const { formatters } = module.exports;
         createDebug.namespaces = namespaces;
         createDebug.names = [];
         createDebug.skips = [];
-        let i;
-        const split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/);
-        const len = split.length;
-        for(i = 0; i < len; i++){
-            if (!split[i]) continue;
-            namespaces = split[i].replace(/\*/g, '.*?');
-            if (namespaces[0] === '-') createDebug.skips.push(new RegExp('^' + namespaces.slice(1) + '$'));
-            else createDebug.names.push(new RegExp('^' + namespaces + '$'));
+        const split = (typeof namespaces === 'string' ? namespaces : '').trim().replace(/\s+/g, ',').split(',').filter(Boolean);
+        for (const ns of split)if (ns[0] === '-') createDebug.skips.push(ns.slice(1));
+        else createDebug.names.push(ns);
+    }
+    /**
+	 * Checks if the given string matches a namespace template, honoring
+	 * asterisks as wildcards.
+	 *
+	 * @param {String} search
+	 * @param {String} template
+	 * @return {Boolean}
+	 */ function matchesTemplate(search, template) {
+        let searchIndex = 0;
+        let templateIndex = 0;
+        let starIndex = -1;
+        let matchIndex = 0;
+        while(searchIndex < search.length){
+            if (templateIndex < template.length && (template[templateIndex] === search[searchIndex] || template[templateIndex] === '*')) {
+                // Match character or proceed with wildcard
+                if (template[templateIndex] === '*') {
+                    starIndex = templateIndex;
+                    matchIndex = searchIndex;
+                    templateIndex++; // Skip the '*'
+                } else {
+                    searchIndex++;
+                    templateIndex++;
+                }
+            } else if (starIndex !== -1) {
+                // Backtrack to the last '*' and try to match more characters
+                templateIndex = starIndex + 1;
+                matchIndex++;
+                searchIndex = matchIndex;
+            } else return false; // No match
         }
+        // Handle trailing '*' in template
+        while(templateIndex < template.length && template[templateIndex] === '*')templateIndex++;
+        return templateIndex === template.length;
     }
     /**
 	* Disable debug output.
@@ -3124,8 +3154,8 @@ const { formatters } = module.exports;
 	* @api public
 	*/ function disable() {
         const namespaces = [
-            ...createDebug.names.map(toNamespace),
-            ...createDebug.skips.map(toNamespace).map((namespace)=>'-' + namespace)
+            ...createDebug.names,
+            ...createDebug.skips.map((namespace)=>'-' + namespace)
         ].join(',');
         createDebug.enable('');
         return namespaces;
@@ -3137,25 +3167,13 @@ const { formatters } = module.exports;
 	* @return {Boolean}
 	* @api public
 	*/ function enabled(name) {
-        if (name[name.length - 1] === '*') return true;
-        let i;
-        let len;
-        for(i = 0, len = createDebug.skips.length; i < len; i++){
-            if (createDebug.skips[i].test(name)) return false;
+        for (const skip of createDebug.skips){
+            if (matchesTemplate(name, skip)) return false;
         }
-        for(i = 0, len = createDebug.names.length; i < len; i++){
-            if (createDebug.names[i].test(name)) return true;
+        for (const ns of createDebug.names){
+            if (matchesTemplate(name, ns)) return true;
         }
         return false;
-    }
-    /**
-	* Convert regexp to namespace
-	*
-	* @param {RegExp} regxep
-	* @return {String} namespace
-	* @api private
-	*/ function toNamespace(regexp) {
-        return regexp.toString().substring(2, regexp.toString().length - 2).replace(/\.\*\?$/, '*');
     }
     /**
 	* Coerce `val`.

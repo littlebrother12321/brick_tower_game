@@ -5,6 +5,8 @@ let connected = false;
 // the sprite sheet
 let sprite_sheet;
 
+const g = 0.1;
+
 function preload() {
     sprite_sheet = loadAni("./stoof.png", { width: 32, height: 32, frames: 2 });
 }
@@ -14,14 +16,14 @@ function setup() {
     background(255);
 
     // connect to an instance of github.com/abachman/p5-websocket-server locally
-    connectWebsocket("ws://172.22.1.96:4004/p5.websocket-dev");
+    //connectWebsocket("wss://172.22.1.96:4004/p5.websocket-dev");
+    //connectWebsocket("wss://127.0.0.1:4004/p5.websocket-dev");
     // or the current reference server at wss://chat.reasonable.systems
-    //connectWebsocket("ws:chat.reasonable.systems/p5.websocket-dev");
+    connectWebsocket("wss:chat.reasonable.systems/p5.websocket-dev");
 
     noStroke();
-    fill(255);
+    fill(0,200,0);
     myColor = color(random(255), 128, random(255));
-
 }
 // we gonna do stoof.
 
@@ -30,6 +32,11 @@ const halfScreenY = window.innerHeight/2;
 //The player Pos using X and Y
 let x = halfScreenX;
 let y = halfScreenY;
+let floor = halfScreenY;
+
+let vx = 0;
+let vy = 0;
+
 // All the list of the players
 let players = {};
 let myId = null;
@@ -38,20 +45,37 @@ function draw() {
 
     push();
     clear();
+
+    rect(0,floor,window.innerWidth,halfScreenY);
+    
+    // cool gravity equations
+    if (y << floor) {
+	y += vy;	
+    }
+    if (y >= floor) {
+	vy = 0
+	y = floor
+    }
+    if (vx > 0){
+	vx -= .5;
+    } else if (vx < 0){
+	vx += .5;
+    }
+    x += vx;
     // animation(sprite_sheet, x, y); This line got comented out
 
-
+    vy += g;
     // moving around code
-    if (keyIsDown(UP_ARROW) || keyIsDown(87)) y -= 1;
+    if (keyIsDown(UP_ARROW) || keyIsDown(87) && !(y < floor)) vy -= 2;
     if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) y += 1;
-    if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) x -= 1;
-    if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) x += 1;
+    if (keyIsDown(LEFT_ARROW) || keyIsDown(65) && (Math.abs(vx) <=5)) vx -= 1;
+    if (keyIsDown(RIGHT_ARROW) || keyIsDown(68) && (Math.abs(vx) <=5)) vx += 1;
      //Sprinting \/
     if (keyIsDown(16)) { // shift speed boost
-        if (keyIsDown(UP_ARROW) || keyIsDown(87)) y -= 1;
+        if (keyIsDown(UP_ARROW) || keyIsDown(87) && !(y < floor)) vy -= 2;
         if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) y += 1;
-        if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) x -= 1;
-        if (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) x += 1;
+        if (keyIsDown(LEFT_ARROW) || keyIsDown(65) && (Math.abs(vx) <=7)) vx -= 1;
+        if (keyIsDown(RIGHT_ARROW) || keyIsDown(68) && (Math.abs(vx) <=7)) vx += 1;
     };
 
         //loop though players and draws them
@@ -64,7 +88,7 @@ function draw() {
         };
     }
 // play animation at location of player x y.
-    animation(sprite_sheet, x, y);
+    animation(sprite_sheet, x, y-16);
 // send over your player data to server
     sendMessage({x, y, color: myColor.toString()  });
 
