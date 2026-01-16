@@ -160,11 +160,11 @@ function draw() {
     // play animation at location of camera x y.
     push();
     translate(x, y, 0);
-    animation(sprite_sheet, -16, 0);
+    animation(sprite_sheet, 0, 0);
     // Set text color
     fill(0,0,0)
     // Show text coordinates on player
-    text(x + "," + round(y), 10, -10); // Round Y because floating point errors are annoying
+    text("(" + x + "," + round(y) + ")", 10, -10); // Round Y because floating point errors are annoying
     pop();
 
     
@@ -222,10 +222,9 @@ function drawFloorGrid() {
     const extent = 2000; // How far lines go
     // Draw the lines
     for(let i = -extent; i <= extent; i += size) {
-	// stroke(255,0,0);
-	// text(i,0,-extent)
-	// line(i, 0, -extent, i, 0, extent); // XZ plane vertical lines
-	// line(-extent, 0, i, extent, 0, i); // XZ plane horizontal lines
+	stroke(255,0,0);
+	line(i, 0, -extent, i, 0, extent); // XZ plane vertical lines
+	line(-extent, 0, i, extent, 0, i); // XZ plane horizontal lines
 	// stroke(0,0,255)
 	// line(0, -extent, i, 0, extent, i); // YZ plane vertical lines
 	// line(0, i, -extent, 0, i, extent); // YZ plane horizontal lines
