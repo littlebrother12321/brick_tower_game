@@ -125,6 +125,9 @@ function draw() {
     plane(5000, window.innerHeight);
     pop();
 
+    // Set text font
+    textFont(font)
+
     // Camera codes
     camera.setPosition(x, y - 100, 500);
     camera.lookAt(x, y, 0);
@@ -157,7 +160,11 @@ function draw() {
     // play animation at location of camera x y.
     push();
     translate(x, y, 0);
-    animation(sprite_sheet, 0, 0);
+    animation(sprite_sheet, -16, 0);
+    // Set text color
+    fill(0,0,0)
+    // Show text coordinates on player
+    text(x + "," + round(y), 10, -10); // Round Y because floating point errors are annoying
     pop();
 
     
@@ -208,21 +215,24 @@ function updatePhysics() {
 function drawFloorGrid() {
     push();
     translate(0, floorY + 16, 0); //move to floor
-    stroke(0, 255, 0);
-    strokeWeight(1);
-    textFont(font);
+    strokeWeight(1); // Set line thickness
+    textFont(font); // Sets the text font (I only had the coolest one close by at the time)
     
     const size = 50; // Spaces between lines
     const extent = 2000; // How far lines go
+    // Draw the lines
     for(let i = -extent; i <= extent; i += size) {
-	stroke(255,0,0);
-	text(i,0,-extent)
-	line(i, 0, -extent, i, 0, extent); // XZ plane vertical lines
-	line(-extent, 0, i, extent, 0, i); // XZ plane horizontal lines
+	// stroke(255,0,0);
+	// text(i,0,-extent)
+	// line(i, 0, -extent, i, 0, extent); // XZ plane vertical lines
+	// line(-extent, 0, i, extent, 0, i); // XZ plane horizontal lines
 	// stroke(0,0,255)
 	// line(0, -extent, i, 0, extent, i); // YZ plane vertical lines
 	// line(0, i, -extent, 0, i, extent); // YZ plane horizontal lines
-	stroke(0,255,0);
+	stroke(200,200,200);
+	fill(0,0,0);
+	text(i, i, 0); // X coordinate text
+	text(i, 0, i); // Y coordinate text
 	line(i, -extent, 0, i, extent, 0); // XY plane vertical lines (the only meaningful ones)
 	line(-extent, i, 0, extent, i, 0); // Ditto but horizontal
     }
@@ -236,45 +246,3 @@ function sendState() {
     x, y, vx, vy
   }));
 }
-
-
-
-
-//  // onConnection, when connected to server, server wants your uid
-//  function onConnection(uid) {
-//     myId = uid;
-//     console.log("i am connected as", uid); // says who I am
-// }
-
-// //when you disconnected say so
-// function onDisconnection() {
-//     console.log("i am disconnected :(");
-// }
-// //when other goofers say hi and connect/send data to you
-// function connectReceived(otherId) {
-//     console.log("another sketch connected", otherId);
-//     players[otherId] = {
-// 	x: 0,
-// 	y: 0
-//     };
-// }
-// // when your buddies leave
-// function disconnectReceived(otherId) {
-//     console.log("another sketch disconnected", otherId);
-//     delete players[otherId];
-// }
-// // when you get a data, parse and like set up a new not you player
-// function messageReceived(data, uid) {
-//     console.log("RX from", uid, data);
-//     if (!players[uid]) {
-//         players[uid] = {
-// 	    x: data.x,
-// 	    y: data.y
-// 	   // color: color(data.color)
-//         };
-//     } else {
-//         players[uid].x = data.x;
-//         players[uid].y = data.y;
-//        // players[uid].color = color(data.color);
-//     }
-// }
