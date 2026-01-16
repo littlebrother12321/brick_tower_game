@@ -36,6 +36,7 @@ let players = {};
 
 function preload() {
     sprite_sheet = loadAni("./stoof.png", { width: 32, height: 32, frames: 2 });
+    font = loadFont("./WeThePeople.ttf");
 }
 
 function setup() {
@@ -121,13 +122,13 @@ function draw() {
     //rect(0,floor,window.innerWidth,halfScreenY);
     push();
     translate(0, halfScreenY, 0);
-    plane(window.innerWidth, window.innerHeight);
+    plane(5000, window.innerHeight);
     pop();
 
     // Camera codes
     camera.setPosition(x, y - 100, 500);
     camera.lookAt(x, y, 0);
-    //orbitControl();
+    orbitControl(); // fixed camera, now constrained a bit
 
     // Grid for reference
     drawFloorGrid();
@@ -209,12 +210,21 @@ function drawFloorGrid() {
     translate(0, floorY + 16, 0); //move to floor
     stroke(0, 255, 0);
     strokeWeight(1);
-
+    textFont(font);
+    
     const size = 50; // Spaces between lines
     const extent = 2000; // How far lines go
     for(let i = -extent; i <= extent; i += size) {
-	line(i, 0, -extent, i, 0, extent); // Vertical lines
-	line(-extent, 0, i, extent, 0, i); // Horizontal lines
+	stroke(255,0,0);
+	text(i,0,-extent)
+	line(i, 0, -extent, i, 0, extent); // XZ plane vertical lines
+	line(-extent, 0, i, extent, 0, i); // XZ plane horizontal lines
+	// stroke(0,0,255)
+	// line(0, -extent, i, 0, extent, i); // YZ plane vertical lines
+	// line(0, i, -extent, 0, i, extent); // YZ plane horizontal lines
+	stroke(0,255,0);
+	line(i, -extent, 0, i, extent, 0); // XY plane vertical lines (the only meaningful ones)
+	line(-extent, i, 0, extent, i, 0); // Ditto but horizontal
     }
     pop();
 }
