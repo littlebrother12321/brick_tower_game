@@ -26,6 +26,9 @@ let vy = 0;
 
 let sentInitialState = false;
 
+// Buttons to connect to local websocket
+let connectButton;
+let disconnectButton;
 
 // WebSocket stuff
 
@@ -43,49 +46,11 @@ function setup() {
     createCanvas(windowWidth,windowHeight, WEBGL);
     background(255);
 
+    frameRate(60);
+    
     camera = createCamera();
 
     drawingContext.disable(drawingContext.DEPTH_TEST);
-
-    // connect to websocket and set update interval
-    socket = new WebSocket("ws://localhost:8080");
-    setInterval(sendState, 50); // 20 Hz
-    
-    // do stuff when socket is opened
-    socket.onopen = () => {
-	console.log("socket connected");
-	sendState();
-	sendInitialState = true;
-    };
-
-    // do stuff when message is recieved
-    socket.onmessage = (event) => {
-	const msg = JSON.parse(event.data);
-
-	switch (msg.type) {
-	case "welcome":
-	    myId = msg.id;
-	    players[myId] = { x: 0, y: 0 };
-	    console.log("I am", myId);
-	    break;
-
-	case "join":
-	    players[msg.id] = { x: 0, y: 0 };
-	    console.log("player joined", msg.id);
-	    break;
-
-	case "leave":
-	    delete players[msg.id];
-	    console.log("player left", msg.id);
-	    break;
-
-	case "state":
-	    if (msg.id !== myId) {
-		players[msg.id] = msg.state;
-	    }
-	    break;
-	}
-    };
 
     // Using normal websocket, no p5 websocket now.
     
@@ -97,18 +62,20 @@ function setup() {
 
     // Testing localhost websocket
     //connectWebsocket("ws://localhost:8080/p5.websocket-dev")
+
+    // Create buttons
+    connectButton = createButton("Connect");
+    connectButton.position(20,50);
+    connectButton.mousePressed(connectSocket);
+
+    disconnectButton = createButton("Disconnect");
+    disconnectButton.position(20, 80);
+    disconnectButton.mousePressed(disconnectSocket);
     
     noStroke();
     fill(0,200,0);
    //myColor = color(random(255), 128, random(255));
 }
-
-// close socket before refreshing page
-window.addEventListener("beforeunload", () => {
-  if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.close();
-  }
-});
 
 // we gonna do stoof.
 
@@ -172,16 +139,17 @@ function draw() {
     sendState();
     
     // Handle socket errors and closes
-    socket.onerror = (err) => {
-	console.error("socket error", err);
-    };
+    // socket.onerror = (err) => {
+    // 	console.error("socket error", err);
+    // };
 
-    socket.onclose = () => {
-	console.log("socket closed");
-    };
+    // socket.onclose = () => {
+    // 	console.log("socket closed");
+    // };
     pop();
 } // end of draw function
 
+// Visuals stuff
 function updatePhysics() {
     // cool gravity equations (Yeah.)
     vy += g;
@@ -222,9 +190,9 @@ function drawFloorGrid() {
     const extent = 2000; // How far lines go
     // Draw the lines
     for(let i = -extent; i <= extent; i += size) {
-	stroke(255,0,0);
-	line(i, 0, -extent, i, 0, extent); // XZ plane vertical lines
-	line(-extent, 0, i, extent, 0, i); // XZ plane horizontal lines
+	//stroke(255,0,0);
+	// line(i, 0, -extent, i, 0, extent); // XZ plane vertical lines
+	// line(-extent, 0, i, extent, 0, i); // XZ plane horizontal lines
 	// stroke(0,0,255)
 	// line(0, -extent, i, 0, extent, i); // YZ plane vertical lines
 	// line(0, i, -extent, 0, i, extent); // YZ plane horizontal lines
@@ -238,6 +206,71 @@ function drawFloorGrid() {
     pop();
 }
 
+// WebSocket stuff
+function connectSocket() {
+    // connect to websocket and set update interval
+    clear();
+    console.log("Starting connection");
+    if (!socket || socket.readyState == 3) {
+	socket = new WebSocket("ws://localhost:8080"); // TODO: add absolute IP when delployeld
+	setInterval(sendState, 50); // 20 Hz
+    } else if (socket.readyState == 1) {
+	console.log("Already connected!");
+    } else if (socket.readyState == 0) {
+	console.log("Connecting...");
+    } else {
+	console.log("Unable to connect", socket.readyState);
+    }
+    // do stuff when socket is opened
+    socket.onopen = () => {
+	console.log("socket connected");
+	sendState();
+	sendInitialState = true;
+    };
+
+    // do stuff when message is recieved
+    socket.onmessage = (event) => {
+	const msg = JSON.parse(event.data);
+
+	switch (msg.type) {
+	case "welcome":
+	    myId = msg.id;
+	    players[myId] = { x: 0, y: 0 };
+	    console.log("I am", myId);
+	    break;
+
+	case "join":
+	    players[msg.id] = { x: 0, y: 0 };
+	    console.log("player joined", msg.id);
+	    delete players["undefined"];
+	    break;
+
+	case "leave":
+	    delete players[msg.id];
+	    console.log("player left", msg.id);
+	    break;
+
+	case "state":
+	    if (msg.id !== myId) {
+		players[msg.id] = msg.state;
+	    }
+	    break;
+	}
+    };
+}
+
+function disconnectSocket() {
+    if (socket && socket.readyState == 1) {
+	socket.close();
+	console.log("Disconnected from websocket");
+	for (let id in players) {
+	    delete players[id];
+	}
+    } else {
+	console.log("Socket not connected");
+    };
+}
+
 function sendState() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
 
@@ -245,3 +278,10 @@ function sendState() {
     x, y, vx, vy
   }));
 }
+
+// close socket before refreshing page
+window.addEventListener("beforeunload", () => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.close();
+  }
+});
