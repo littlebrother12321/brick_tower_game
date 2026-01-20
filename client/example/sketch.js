@@ -64,7 +64,7 @@ function setup() {
     
     camera = createCamera();
 
-    drawingContext.disable(drawingContext.DEPTH_TEST);
+    //drawingContext.disable(drawingContext.DEPTH_TEST);
 
     // Using normal websocket, no p5 websocket now.
     
@@ -105,8 +105,8 @@ function draw() {
     camera.lookAt(x, y, 0);
     orbitControl(); // fixed camera, now constrained a bit
     
-
-    drawFloor();
+    push();
+    drawWavyFloor();
     
     // Set text font
     textFont(font)    
@@ -114,7 +114,7 @@ function draw() {
     push();
     translate(0, -75, 0);
     stroke(2);
-    box(50,50,0); // Box for physics testing
+    box(50,50,50); // Box for physics testing
     pop();
     
     // Grid for reference
@@ -149,7 +149,7 @@ function draw() {
     // Set text color
     fill(0,0,0)
     // Show text coordinates on player
-    text("(" + x + "," + round(y) + ")", 10, -10); // Round Y because floating point errors are annoying
+    text(x + "\n" + round(y), 10, -20); // Round Y because floating point errors are annoying
     pop();
 
     
@@ -203,8 +203,10 @@ function updatePhysics() {
     y += vy;
 
     // floor
-    if (y >= floorY) {
-	y = floorY;
+    const footY = floorHeight(x);
+    
+    if (y > footY) {
+	y = footY;
 	//vy = 0;
 	grounded = true;
     } else {
@@ -276,16 +278,25 @@ function aabbIntersect(a, b) {
     );
 }
 
-function drawFloor() {
+function floorHeight(worldX) {
+    return floorY + sin(worldX * 1 + 45) * 25;
+}
+
+function drawWavyFloor() {
     //drawing the floor
     push();
-    //rect(0,floor,window.innerWidth,halfScreenY);
-    push();
-    translate(0, halfScreenY, 0);
-    stroke(2);
-    plane(5000, window.innerHeight);
-    pop();
+    stroke(100);
+    fill(100, 200, 100);
+    
+    beginShape(TRIANGLE_STRIP);
+    for (let i = -2500; i <= 2500; i += 20) {
+	const j = floorHeight(i);
+	vertex(i, j + 16, 0);
+	vertex(i, j + 500, 0);
+    }
+    endShape();
 
+    pop();
 }
 
 function drawFloorGrid() {
