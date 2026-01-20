@@ -21,10 +21,24 @@ let floorY = -16;
 let x = 0;
 let y = floorY;
 
+// fysics
 let vx = 0;
 let vy = 0;
+let grounded = false;
 
-let sentInitialState = false;
+// Player AABB coordinates
+const PLAYER_W = 32;
+const PLAYER_H = 32;
+
+// BOx collisions
+
+const cube = {
+    x: 0,
+    y: -75 + floorY,
+    w: 50,
+    h: 50
+};
+
 
 // Buttons to connect to local websocket
 let connectButton;
@@ -83,23 +97,26 @@ function setup() {
 //The draw function draws things
 function draw() {
 
-    //drawing the floor
-    push();
+
     clear();
-    //rect(0,floor,window.innerWidth,halfScreenY);
-    push();
-    translate(0, halfScreenY, 0);
-    plane(5000, window.innerHeight);
-    pop();
-
-    // Set text font
-    textFont(font)
-
+    
     // Camera codes
-    camera.setPosition(x, y - 100, 500);
+    camera.setPosition(x, y - 50, 500);
     camera.lookAt(x, y, 0);
     orbitControl(); // fixed camera, now constrained a bit
+    
 
+    drawFloor();
+    
+    // Set text font
+    textFont(font)    
+
+    push();
+    translate(0, -75, 0);
+    stroke(2);
+    box(50,50,0); // Box for physics testing
+    pop();
+    
     // Grid for reference
     drawFloorGrid();
 
@@ -124,6 +141,7 @@ function draw() {
             pop();
         };
     }
+    
     // play animation at location of camera x y.
     push();
     translate(x, y, 0);
@@ -151,33 +169,123 @@ function draw() {
 
 // Visuals stuff
 function updatePhysics() {
-    // cool gravity equations (Yeah.)
-    vy += g;
-    y += vy;
+    
+    // input
+    if ((keyIsDown(LEFT_ARROW) || keyIsDown(65)) && vx >= -4) vx -= 1;
+    if ((keyIsDown(RIGHT_ARROW) || keyIsDown(68)) && vx <= 4) vx += 1;
 
-    // Hit floor
-    if (y > floorY) {
-	y = floorY;
-	vy = 0;
+    if ((keyIsDown(UP_ARROW) || keyIsDown(87)) && grounded) {
+	vy = -2;
+    }
+
+    if (keyIsDown(16)) {
+	if ((keyIsDown(LEFT_ARROW) || keyIsDown(65)) && vx >= -7) vx -= 2;
+	if ((keyIsDown(RIGHT_ARROW) || keyIsDown(68)) && vx <= 7) vx += 2;
+
+	if ((keyIsDown(UP_ARROW) || keyIsDown(87)) && grounded) {
+	    vy = -4;
+	}
     }
     
-    // Friction equations
-    if (vx > 0)	vx = max(0, vx - FRICTION);
-    else if (vx < 0) vx = min(0, vx + FRICTION);
-    x += vx;
+    // gravity
+    vy += g;
 
-    // moving around code
-    if ((keyIsDown(UP_ARROW) || keyIsDown(87)) && y === floorY) vy = -2;
-    if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) y += 1;
-    if ((keyIsDown(LEFT_ARROW) || keyIsDown(65)) && (Math.abs(vx) <= 5)) vx -= 1;
-    if ((keyIsDown(RIGHT_ARROW) || keyIsDown(68)) && (Math.abs(vx) <= 5)) vx += 1;
-     //Sprinting
-    if (keyIsDown(16)) { // shift speed boost
-        if ((keyIsDown(UP_ARROW) || keyIsDown(87)) && y === floorY) vy = -4;
-        if (keyIsDown(DOWN_ARROW) || keyIsDown(83)) y += 1;
-        if ((keyIsDown(LEFT_ARROW) || keyIsDown(65)) && (Math.abs(vx) <= 7)) vx -= 1;
-        if ((keyIsDown(RIGHT_ARROW) || keyIsDown(68)) && (Math.abs(vx) <= 7)) vx += 1;
+    // friction
+    if (vx > 0) vx = max(0, vx - FRICTION);
+    else if (vx < 0) vx = min(0, vx + FRICTION);
+
+    // ---- X AXIS ----
+    x += vx;
+    resolveXCollision(boxAABB());
+
+    // ---- Y AXIS ----
+    const prevY = y;
+    y += vy;
+
+    // floor
+    if (y >= floorY) {
+	y = floorY;
+	//vy = 0;
+	grounded = true;
+    } else {
+	grounded = false;
+    }
+
+    // box
+    resolveYCollision(boxAABB(), prevY);
+}
+
+// Player collisions (made with love + chat)
+function playerAABB(px = x, py = y) {
+    return {
+	minX: px - PLAYER_W / 2,
+	maxX: px + PLAYER_W / 2,
+	minY: py - PLAYER_H,
+	maxY: py
+    }
+}
+
+function boxAABB() {
+    return {
+	minX: cube.x - cube.w / 2,
+	maxX: cube.x + cube.w / 2,
+	minY: cube.y - cube.h / 2,
+	maxY: cube.y + cube.h / 2
     };
+}
+
+function resolveXCollision(collider) {
+  const p = playerAABB();
+
+  if (!aabbIntersect(p, collider)) return;
+
+  if (vx > 0) {
+    x = collider.minX - PLAYER_W / 2;
+  } else if (vx < 0) {
+    x = collider.maxX + PLAYER_W / 2;
+  }
+
+  vx = 0;
+}
+
+function resolveYCollision(collider, prevY) {
+  const p = playerAABB();
+
+  if (!aabbIntersect(p, collider)) return;
+
+  // Landing on top
+  if (vy > 0 && prevY <= collider.minY) {
+    y = collider.minY;
+    vy = 0;
+    grounded = true;
+  }
+
+  // Hitting head
+  else if (vy < 0 && prevY >= collider.maxY) {
+    y = collider.maxY + PLAYER_H;
+    vy = 0;
+  }
+}
+
+function aabbIntersect(a, b) {
+    return (
+	a.minX < b.maxX &&
+	    a.maxX > b.minX &&
+	    a.minY < b.maxY &&
+	    a.maxY > b.minY
+    );
+}
+
+function drawFloor() {
+    //drawing the floor
+    push();
+    //rect(0,floor,window.innerWidth,halfScreenY);
+    push();
+    translate(0, halfScreenY, 0);
+    stroke(2);
+    plane(5000, window.innerHeight);
+    pop();
+
 }
 
 function drawFloorGrid() {
