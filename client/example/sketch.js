@@ -15,11 +15,11 @@ const FRICTION = 0.5
 // Visual stuff
 const halfScreenX = window.innerWidth/2;
 const halfScreenY = window.innerHeight/2;
-let floorY = -16;
+let floorY = 0;
 
 //The player Pos using X and Y
-let x = 0;
-let y = floorY;
+let x = -64;
+let y = 0;
 
 // fysics
 let vx = 0;
@@ -34,11 +34,16 @@ const PLAYER_H = 32;
 
 const cube = {
     x: 0,
-    y: -75 + floorY,
+    y: -75,
     w: 50,
-    h: 50
+    h: 50,
+    vx: 0,
+    vy: 0,
+    grounded: false
 };
 
+const CUBE_FRICTION = 0.2;
+const CUBE_AIR_FRICTION = 0.05;
 
 // Buttons to connect to local websocket
 let connectButton;
@@ -93,7 +98,6 @@ function setup() {
 
 // we gonna do stoof.
 
-// All the list of the players (now at the top of file
 //The draw function draws things
 function draw() {
 
@@ -112,9 +116,9 @@ function draw() {
     textFont(font)    
 
     push();
-    translate(0, -75, 0);
+    translate(cube.x, cube.y + 16, 0);
     stroke(2);
-    box(50,50,50); // Box for physics testing
+    box(cube.w,cube.h,sqrt(pow(cube.vx, 2) + pow(cube.vy, 2)) * 16); // Box for physics testing
     pop();
     
     // Grid for reference
@@ -149,7 +153,7 @@ function draw() {
     // Set text color
     fill(0,0,0)
     // Show text coordinates on player
-    text(x + "\n" + round(y), 10, -20); // Round Y because floating point errors are annoying
+    text(round(x) + "\n" + round(y), 10, -20); // Round Y because floating point errors are annoying
     pop();
 
     
@@ -215,6 +219,36 @@ function updatePhysics() {
 
     // box
     resolveYCollision(boxAABB(), prevY);
+    updateCubePhysics();
+}
+
+function updateCubePhysics() {
+    // Gravity
+    cube.vy += g;
+
+    // integrate
+    cube.x += cube.vx;
+    cube.y += cube.vy;
+
+    const flootY = floorHeight(cube.x);
+
+    // Cube gravity
+    if (cube.y + cube.h / 2 > flootY) {
+	cube.y = flootY - cube.h / 2;
+	cube.vy = 0;
+	cube.grounded = true;
+
+	// Ground friction
+	if (cube.vx > 0) cube.vx = max(0, cube.vx - CUBE_FRICTION); // Cube friction
+	else if (cube.vx < 0) cube.vx = min(0, cube.vx + CUBE_FRICTION);
+    } else {
+	cube.grounded = false;
+
+	cube.vx *= (1 - CUBE_AIR_FRICTION); // air resistance
+    }
+
+    // Cube non-jitter-inator
+    if (abs(cube.vx) < 0.01) cube.vx = 0;
 }
 
 // Player collisions (made with love + chat)
@@ -237,36 +271,46 @@ function boxAABB() {
 }
 
 function resolveXCollision(collider) {
-  const p = playerAABB();
+    const p = playerAABB();
 
-  if (!aabbIntersect(p, collider)) return;
+    if (!aabbIntersect(p, collider)) return;
 
-  if (vx > 0) {
-    x = collider.minX - PLAYER_W / 2;
-  } else if (vx < 0) {
-    x = collider.maxX + PLAYER_W / 2;
-  }
+    if (vx !== 0) {
+	cube.vx += vx * 0.2;
+    }
+    
+    if (vx > 0) {
+	x = collider.minX - PLAYER_W / 2;
+    } else if (vx < 0) {
+	x = collider.maxX + PLAYER_W / 2;
+    }
 
-  vx = 0;
+    // player thing
+    vx = 0;
+
 }
 
 function resolveYCollision(collider, prevY) {
-  const p = playerAABB();
+    const p = playerAABB();
 
-  if (!aabbIntersect(p, collider)) return;
+    if (!aabbIntersect(p, collider)) return;
 
-  // Landing on top
-  if (vy > 0 && prevY <= collider.minY) {
-    y = collider.minY;
-    vy = 0;
-    grounded = true;
-  }
+    // Landing on top
+    if (vy > 0 && prevY <= collider.minY) {
+	y = collider.minY;
+	vy = 0;
+	grounded = true;
 
-  // Hitting head
-  else if (vy < 0 && prevY >= collider.maxY) {
-    y = collider.maxY + PLAYER_H;
-    vy = 0;
-  }
+	// pushing the cueb down
+	cube.vy += g * 2;
+    }
+
+    // Hitting head
+    else if (vy < 0 && prevY >= collider.maxY) {
+	y = collider.maxY + PLAYER_H;
+	vy = 0;
+	cube.vy -= 0.5;
+    }
 }
 
 function aabbIntersect(a, b) {
@@ -279,7 +323,8 @@ function aabbIntersect(a, b) {
 }
 
 function floorHeight(worldX) {
-    return floorY + sin(worldX * 1 + 45) * 25;
+    return floorY + cos(worldX * 1 + 45) * 25;
+    //return pow(1.01, worldX) / 50000;
 }
 
 function drawWavyFloor() {
@@ -291,8 +336,8 @@ function drawWavyFloor() {
     beginShape(TRIANGLE_STRIP);
     for (let i = -2500; i <= 2500; i += 20) {
 	const j = floorHeight(i);
-	vertex(i, j + 16, 0);
-	vertex(i, j + 500, 0);
+	vertex(i, j + 16, -1);
+	vertex(i, j + 5000, -1);
     }
     endShape();
 
