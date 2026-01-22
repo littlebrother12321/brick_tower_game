@@ -19,7 +19,7 @@ let floorY = 0;
 
 //The player Pos using X and Y
 let x = -64;
-let y = 0;
+let y = -5000;
 
 // fysics
 let vx = 0;
@@ -34,7 +34,7 @@ const PLAYER_H = 32;
 
 const cube = {
     x: 0,
-    y: -75,
+    y: -5000,
     w: 50,
     h: 50,
     vx: 0,
@@ -323,8 +323,9 @@ function aabbIntersect(a, b) {
 }
 
 function floorHeight(worldX) {
-    return floorY + cos(worldX * 1 + 45) * 25;
+    //return floorY + cos(worldX * 1 + 45) * 25;
     //return pow(1.01, worldX) / 50000;
+    return pow(worldX, 1/6) / 500000
 }
 
 function drawWavyFloor() {
