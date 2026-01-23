@@ -18,19 +18,29 @@ const halfScreenY = window.innerHeight/2;
 let floorY = 0;
 
 //The player Pos using X and Y
-let x = -64;
-let y = -5000;
+//let x = -64;
+//let y = -5000;
 
 // fysics
-let vx = 0;
-let vy = 0;
-let grounded = false;
+//let vx = 0;
+///let vy = 0;
+//let grounded = false;
 
 // Player AABB coordinates
-const PLAYER_W = 32;
-const PLAYER_H = 32;
+//const PLAYER_W = 32;
+//const PLAYER_H = 32;
 
 // BOx collisions
+
+const player = {
+    x: -64,
+    y: -500,
+    vx: 0,
+    vy: 0,
+    grounded: false,
+    w: 32,
+    h: 32
+}
 
 const cube = {
     x: 0,
@@ -105,8 +115,8 @@ function draw() {
     clear();
     
     // Camera codes
-    camera.setPosition(x, y - 50, 500);
-    camera.lookAt(x, y, 0);
+    camera.setPosition(player.x, player.y - 50, 500);
+    camera.lookAt(player.x, player.y, 0);
     orbitControl(); // fixed camera, now constrained a bit
     
     push();
@@ -128,7 +138,7 @@ function draw() {
     updatePhysics();
     
     // animation(sprite_sheet, x, y); This line got comented out
-    //console.log("x: " + x + " y: " + y + " vx: " + vx + " vy: " + vy);
+    console.log("x: " + player.x + " y: " + player.y + " vx: " + player.vx + " vy: " + player.vy);
     //console.log("camX: " + camera.eyeX, "camY: " + camera.eyeY);
 
     //loop though players and draws them
@@ -139,7 +149,7 @@ function draw() {
 	    translate(
 		players[id].x,
 		players[id].y,
-		1
+		0
 	    );
 	    animation(sprite_sheet, 0, 0);
             pop();
@@ -148,12 +158,12 @@ function draw() {
     
     // play animation at location of camera x y.
     push();
-    translate(x, y, 0);
+    translate(player.x, player.y, 0);
     animation(sprite_sheet, 0, 0);
     // Set text color
     fill(0,0,0)
     // Show text coordinates on player
-    text(round(x) + "\n" + round(y), 10, -20); // Round Y because floating point errors are annoying
+    text(round(player.x) + "\n" + round(player.y), 10, -20); // Round Y because floating point errors are annoying
     pop();
 
     
@@ -175,42 +185,42 @@ function draw() {
 function updatePhysics() {
     
     // input
-    if ((keyIsDown(LEFT_ARROW) || keyIsDown(65)) && vx >= -4) vx -= 1;
-    if ((keyIsDown(RIGHT_ARROW) || keyIsDown(68)) && vx <= 4) vx += 1;
+    if ((keyIsDown(LEFT_ARROW) || keyIsDown(65)) && player.vx >= -4) player.vx -= 1;
+    if ((keyIsDown(RIGHT_ARROW) || keyIsDown(68)) && player.vx <= 4) player.vx += 1;
 
     if ((keyIsDown(UP_ARROW) || keyIsDown(87)) && grounded) {
-	vy = -2;
+	player.vy = -2;
     }
 
     if (keyIsDown(16)) {
-	if ((keyIsDown(LEFT_ARROW) || keyIsDown(65)) && vx >= -7) vx -= 2;
-	if ((keyIsDown(RIGHT_ARROW) || keyIsDown(68)) && vx <= 7) vx += 2;
+	if ((keyIsDown(LEFT_ARROW) || keyIsDown(65)) && player.vx >= -7) player.vx -= 2;
+	if ((keyIsDown(RIGHT_ARROW) || keyIsDown(68)) && player.vx <= 7) player.vx += 2;
 
 	if ((keyIsDown(UP_ARROW) || keyIsDown(87)) && grounded) {
-	    vy = -4;
+	    player.vy = -4;
 	}
     }
     
     // gravity
-    vy += g;
+    player.vy += g;
 
     // friction
-    if (vx > 0) vx = max(0, vx - FRICTION);
-    else if (vx < 0) vx = min(0, vx + FRICTION);
+    if (player.vx > 0) player.vx = max(0, player.vx - FRICTION);
+    else if (player.vx < 0) player.vx = min(0, player.vx + FRICTION);
 
     // ---- X AXIS ----
-    x += vx;
+    player.x += player.vx;
     resolveXCollision(boxAABB());
 
     // ---- Y AXIS ----
-    const prevY = y;
-    y += vy;
+    const prevY = player.y;
+    player.y += player.vy;
 
     // floor
-    const footY = floorHeight(x);
+    const footY = floorHeight(player.x);
     
-    if (y > footY) {
-	y = footY;
+    if (player.y > footY) {
+	player.y = footY;
 	//vy = 0;
 	grounded = true;
     } else {
@@ -252,11 +262,11 @@ function updateCubePhysics() {
 }
 
 // Player collisions (made with love + chat)
-function playerAABB(px = x, py = y) {
+function playerAABB(px = player.x, py = player.y) {
     return {
-	minX: px - PLAYER_W / 2,
-	maxX: px + PLAYER_W / 2,
-	minY: py - PLAYER_H,
+	minX: px - player.w / 2,
+	maxX: px + player.w / 2,
+	minY: py - player.h,
 	maxY: py
     }
 }
@@ -275,18 +285,18 @@ function resolveXCollision(collider) {
 
     if (!aabbIntersect(p, collider)) return;
 
-    if (vx !== 0) {
-	cube.vx += vx * 0.2;
+    if (player.vx !== 0) {
+	cube.vx += player.vx * 0.2;
     }
     
-    if (vx > 0) {
-	x = collider.minX - PLAYER_W / 2;
-    } else if (vx < 0) {
-	x = collider.maxX + PLAYER_W / 2;
+    if (player.vx > 0) {
+	player.x = collider.minX - player.w / 2;
+    } else if (player.vx < 0) {
+	x = collider.maxX + player.w / 2;
     }
 
     // player thing
-    vx = 0;
+    player.vx = 0;
 
 }
 
@@ -296,19 +306,19 @@ function resolveYCollision(collider, prevY) {
     if (!aabbIntersect(p, collider)) return;
 
     // Landing on top
-    if (vy > 0 && prevY <= collider.minY) {
-	y = collider.minY;
-	vy = 0;
-	grounded = true;
+    if (player.vy > 0 && prevY <= collider.minY) {
+	player.y = collider.minY;
+	player.vy = 0;
+	player.grounded = true;
 
 	// pushing the cueb down
 	cube.vy += g * 2;
     }
 
     // Hitting head
-    else if (vy < 0 && prevY >= collider.maxY) {
-	y = collider.maxY + PLAYER_H;
-	vy = 0;
+    else if (player.vy < 0 && prevY >= collider.maxY) {
+	player.y = collider.maxY + player.h;
+	player.vy = 0;
 	cube.vy -= 0.5;
     }
 }
@@ -440,8 +450,8 @@ function sendState() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
 
   socket.send(JSON.stringify({
-    x, y, vx, vy
-  }));
+    x: player.x, y: player.y, vx: player.vx, vy: player.vy
+}));
 }
 
 // close socket before refreshing page
