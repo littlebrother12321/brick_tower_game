@@ -52,6 +52,16 @@ const cube = {
     grounded: false
 };
 
+const cube2 = {
+    x: 0,
+    y: -5050,
+    w: 50,
+    h: 50,
+    vx: 0,
+    vy: 0,
+    grounded: false
+};
+
 const CUBE_FRICTION = 0.2;
 const CUBE_AIR_FRICTION = 0.05;
 
@@ -91,6 +101,9 @@ function setup() {
 
     // Testing localhost websocket
     //connectWebsocket("ws://localhost:8080/p5.websocket-dev")
+
+    noiseDetail(4, 8);
+    noiseSeed(1337);
 
     // Create buttons
     connectButton = createButton("Connect");
@@ -144,6 +157,11 @@ function draw() {
     box(cube.w,cube.h,sqrt(pow(cube.vx, 2) + pow(cube.vy, 2)) * 16); // Box for physics testing
     pop();
 
+    push();
+    translate(cube2.x, cube2.y + 16, 0);
+    stroke(2);
+    box(cube2.w,cube2.h,sqrt(pow(cube2.vx, 2) + pow(cube2.vy, 2)) * 16); // Box for physics testing
+    pop();
     
     // animation(sprite_sheet, x, y); This line got comented out
     //console.log("x: " + player.x + " y: " + player.y + " vx: " + player.vx + " vy: " + player.vy);
@@ -358,7 +376,24 @@ function getViewBounds() {
 }
 
 function floorHeight(worldX) {
-    return floorY + cos(worldX * 1 + 45) * 25;
+    let SCALE;
+    let AMP;
+    let BASE
+    //return floorY + cos(worldX * 1 + 45) * 25;
+    if (worldX < 0) {
+	SCALE = 0.00000002;
+	AMP = -0.5;
+	BASE = -floorY;
+    } else {
+	SCALE = 0.0002;
+	AMP = 1;
+	BASE = floorY;
+    }
+
+    const n = noise(worldX * SCALE);
+    const h = (n - 229) * 2;
+
+    return BASE + h * AMP;
     //return pow(1.02, worldX) / 50000;
     //return pow(worldX, 1/6) / 500000
 }
@@ -367,7 +402,7 @@ function drawWavyFloor() {
     // Get view plane
     const view = getViewBounds();
 
-    const step = 20;
+    const step = 3;
     const startX = floor(view.minX / step) * step;
     const endX = ceil(view.maxX / step) * step;
     
