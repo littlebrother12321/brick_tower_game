@@ -24,7 +24,7 @@ let floorY = 0;
 // fysics
 //let vx = 0;
 ///let vy = 0;
-//let grounded = false;
+let grounded = false;
 
 // Player AABB coordinates
 //const PLAYER_W = 32;
@@ -113,14 +113,27 @@ function draw() {
 
 
     clear();
+
+    // Runs updatephysics, look below for details
+    updatePhysics();
+
     
     // Camera codes
-    camera.setPosition(player.x, player.y - 50, 500);
+    camera.setPosition(player.x, player.y, 500);
     camera.lookAt(player.x, player.y, 0);
     orbitControl(); // fixed camera, now constrained a bit
+    frustum(-halfScreenX / 13, halfScreenX / 13, -halfScreenY / 13, halfScreenY / 13); // Optimize a bit by adding a frustrum (it's upside down, yeah.)
+
     
     push();
-    drawWavyFloor();
+
+
+    if (frameCount % 1 === 0) {
+	// Draw floor
+	drawWavyFloor();
+	// Grid for reference
+	drawFloorGrid();
+    };
     
     // Set text font
     textFont(font)    
@@ -130,15 +143,10 @@ function draw() {
     stroke(2);
     box(cube.w,cube.h,sqrt(pow(cube.vx, 2) + pow(cube.vy, 2)) * 16); // Box for physics testing
     pop();
-    
-    // Grid for reference
-    drawFloorGrid();
 
-    // Runs updatephysics, look below for details
-    updatePhysics();
     
     // animation(sprite_sheet, x, y); This line got comented out
-    console.log("x: " + player.x + " y: " + player.y + " vx: " + player.vx + " vy: " + player.vy);
+    //console.log("x: " + player.x + " y: " + player.y + " vx: " + player.vx + " vy: " + player.vy);
     //console.log("camX: " + camera.eyeX, "camY: " + camera.eyeY);
 
     //loop though players and draws them
@@ -158,12 +166,12 @@ function draw() {
     
     // play animation at location of camera x y.
     push();
-    translate(player.x, player.y, 0);
+    translate(max(player.x), max(player.y), 1);
     animation(sprite_sheet, 0, 0);
     // Set text color
     fill(0,0,0)
     // Show text coordinates on player
-    text(round(player.x) + "\n" + round(player.y), 10, -20); // Round Y because floating point errors are annoying
+    text(player.x + "\n" + player.y, 10, -20); // Round Y because floating point errors are annoying
     pop();
 
     
@@ -202,7 +210,7 @@ function updatePhysics() {
     }
     
     // gravity
-    player.vy += g;
+    if (!grounded)  player.vy += g;
 
     // friction
     if (player.vx > 0) player.vx = max(0, player.vx - FRICTION);
@@ -221,12 +229,14 @@ function updatePhysics() {
     
     if (player.y > footY) {
 	player.y = footY;
-	//vy = 0;
 	grounded = true;
     } else {
 	grounded = false;
     }
 
+    // Terminal velocity
+    if (player.vy > 130) player.vy = 130;
+    
     // box
     resolveYCollision(boxAABB(), prevY);
     updateCubePhysics();
@@ -259,6 +269,9 @@ function updateCubePhysics() {
 
     // Cube non-jitter-inator
     if (abs(cube.vx) < 0.01) cube.vx = 0;
+
+    // Cube terminal velocity
+    if (cube.vy > 130) cube.vy = 130;
 }
 
 // Player collisions (made with love + chat)
@@ -292,7 +305,7 @@ function resolveXCollision(collider) {
     if (player.vx > 0) {
 	player.x = collider.minX - player.w / 2;
     } else if (player.vx < 0) {
-	x = collider.maxX + player.w / 2;
+	player.x = collider.maxX + player.w / 2;
     }
 
     // player thing
@@ -332,23 +345,42 @@ function aabbIntersect(a, b) {
     );
 }
 
+function getViewBounds() {
+    const viewW = width * 0.6;
+    const viewH = height * 0.6;
+
+    return {
+	minX: player.x - viewW,
+	maxX: player.x + viewW,
+	minY: player.y - viewH,
+	maxY: player.y + viewH
+    };
+}
+
 function floorHeight(worldX) {
-    //return floorY + cos(worldX * 1 + 45) * 25;
-    //return pow(1.01, worldX) / 50000;
-    return pow(worldX, 1/6) / 500000
+    return floorY + cos(worldX * 1 + 45) * 25;
+    //return pow(1.02, worldX) / 50000;
+    //return pow(worldX, 1/6) / 500000
 }
 
 function drawWavyFloor() {
+    // Get view plane
+    const view = getViewBounds();
+
+    const step = 20;
+    const startX = floor(view.minX / step) * step;
+    const endX = ceil(view.maxX / step) * step;
+    
     //drawing the floor
     push();
     stroke(100);
     fill(100, 200, 100);
     
     beginShape(TRIANGLE_STRIP);
-    for (let i = -2500; i <= 2500; i += 20) {
-	const j = floorHeight(i);
-	vertex(i, j + 16, -1);
-	vertex(i, j + 5000, -1);
+    for (let x = startX; x <= endX; x += step) {
+	const y = floorHeight(x);
+	vertex(x, y + 16, -1);
+	vertex(x, y + 5000, -1);
     }
     endShape();
 
@@ -356,28 +388,31 @@ function drawWavyFloor() {
 }
 
 function drawFloorGrid() {
+
+    const view = getViewBounds();
+    const size = 50;
+
+    const startX = floor(view.minX / size) * size;
+    const endX   = ceil(view.maxX / size) * size;
+    const startY = floor(view.minY / size) * size;
+    const endY   = ceil(view.maxY / size) * size;
+
     push();
-    translate(0, floorY + 16, 0); //move to floor
-    strokeWeight(1); // Set line thickness
+    stroke(200);
+    fill(0);
     textFont(font); // Sets the text font (I only had the coolest one close by at the time)
     
-    const size = 50; // Spaces between lines
-    const extent = 2000; // How far lines go
     // Draw the lines
-    for(let i = -extent; i <= extent; i += size) {
-	//stroke(255,0,0);
-	// line(i, 0, -extent, i, 0, extent); // XZ plane vertical lines
-	// line(-extent, 0, i, extent, 0, i); // XZ plane horizontal lines
-	// stroke(0,0,255)
-	// line(0, -extent, i, 0, extent, i); // YZ plane vertical lines
-	// line(0, i, -extent, 0, i, extent); // YZ plane horizontal lines
-	stroke(200,200,200);
-	fill(0,0,0);
-	text(i, i, 0); // X coordinate text
-	text(i, 0, i); // Y coordinate text
-	line(i, -extent, 0, i, extent, 0); // XY plane vertical lines (the only meaningful ones)
-	line(-extent, i, 0, extent, i, 0); // Ditto but horizontal
+    for (let x = startX; x <= endX; x += size) {
+	line(x, startY, 0, x, endY, 0);
+	text(x, x, 0);
     }
+
+    for (let y = startY; y <= endY; y += size) {
+	line(startX, y, 0, endX, y, 0);
+	text(y, 0, y);
+    }
+
     pop();
 }
 
