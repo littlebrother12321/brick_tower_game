@@ -42,25 +42,7 @@ const player = {
     h: 32
 }
 
-const cube = {
-    x: 0,
-    y: -5000,
-    w: 50,
-    h: 50,
-    vx: 0,
-    vy: 0,
-    grounded: false
-};
-
-const cube2 = {
-    x: 0,
-    y: -5050,
-    w: 50,
-    h: 50,
-    vx: 0,
-    vy: 0,
-    grounded: false
-};
+const cubes = []
 
 const CUBE_FRICTION = 0.2;
 const CUBE_AIR_FRICTION = 0.05;
@@ -113,6 +95,9 @@ function setup() {
     disconnectButton = createButton("Disconnect");
     disconnectButton.position(20, 80);
     disconnectButton.mousePressed(disconnectSocket);
+
+    spawnCube(-100, -5000);
+    spawnCube(0, -5050);
     
     noStroke();
     fill(0,200,0);
@@ -151,17 +136,18 @@ function draw() {
     // Set text font
     textFont(font)    
 
-    push();
-    translate(cube.x, cube.y + 16, 0);
-    stroke(2);
-    box(cube.w,cube.h,sqrt(pow(cube.vx, 2) + pow(cube.vy, 2)) * 16); // Box for physics testing
-    pop();
-
-    push();
-    translate(cube2.x, cube2.y + 16, 0);
-    stroke(2);
-    box(cube2.w,cube2.h,sqrt(pow(cube2.vx, 2) + pow(cube2.vy, 2)) * 16); // Box for physics testing
-    pop();
+    // Draw n amount of cubes
+    for (const cube of cubes) {
+	push();
+	translate(cube.x, cube.y + 16, 0);
+	stroke(2);
+	box(
+	    cube.w,
+	    cube.h,
+	    sqrt(cube.vx * cube.vx + cube.vy * cube.vy) * 16
+	);
+	pop();
+    }
     
     // animation(sprite_sheet, x, y); This line got comented out
     //console.log("x: " + player.x + " y: " + player.y + " vx: " + player.vx + " vy: " + player.vy);
@@ -189,7 +175,7 @@ function draw() {
     // Set text color
     fill(0,0,0)
     // Show text coordinates on player
-    text(player.x + "\n" + player.y, 10, -20); // Round Y because floating point errors are annoying
+    text(round(player.x) + "\n" + round(player.y), 10, -20); // Round X & Y because floating point errors are annoying
     pop();
 
     
@@ -207,7 +193,7 @@ function draw() {
     pop();
 } // end of draw function
 
-// Visuals stuff
+// Physics stuff
 function updatePhysics() {
     
     // input
@@ -226,6 +212,8 @@ function updatePhysics() {
 	    player.vy = -4;
 	}
     }
+
+    if (keyIsDown(BACKSPACE)) spawnCube(player.x, player.y - 1000);
     
     // gravity
     if (!grounded)  player.vy += g;
@@ -235,11 +223,14 @@ function updatePhysics() {
     else if (player.vx < 0) player.vx = min(0, player.vx + FRICTION);
 
     // ---- X AXIS ----
-    player.x += player.vx;
-    resolveXCollision(boxAABB());
+    player.x += round(player.vx);
+    for (const cube of cubes) {
+	resolveXCollision(boxAABB(cube), cube);
+    }
 
+    
     // ---- Y AXIS ----
-    const prevY = player.y;
+    const prevY = round(player.y);
     player.y += player.vy;
 
     // floor
@@ -254,42 +245,39 @@ function updatePhysics() {
 
     // Terminal velocity
     if (player.vy > 130) player.vy = 130;
-    
+
     // box
-    resolveYCollision(boxAABB(), prevY);
+    for (const cube of cubes) {
+	resolveYCollision(boxAABB(cube), prevY, cube);
+    }
     updateCubePhysics();
+
 }
 
 function updateCubePhysics() {
-    // Gravity
+  for (const cube of cubes) {
     cube.vy += g;
 
-    // integrate
     cube.x += cube.vx;
     cube.y += cube.vy;
 
-    const flootY = floorHeight(cube.x);
+    const floorY = floorHeight(cube.x);
 
-    // Cube gravity
-    if (cube.y + cube.h / 2 > flootY) {
-	cube.y = flootY - cube.h / 2;
-	cube.vy = 0;
-	cube.grounded = true;
+    if (cube.y + cube.h / 2 > floorY) {
+      cube.y = floorY - cube.h / 2;
+      cube.vy = 0;
+      cube.grounded = true;
 
-	// Ground friction
-	if (cube.vx > 0) cube.vx = max(0, cube.vx - CUBE_FRICTION); // Cube friction
-	else if (cube.vx < 0) cube.vx = min(0, cube.vx + CUBE_FRICTION);
+      if (cube.vx > 0) cube.vx = max(0, cube.vx - CUBE_FRICTION);
+      else if (cube.vx < 0) cube.vx = min(0, cube.vx + CUBE_FRICTION);
     } else {
-	cube.grounded = false;
-
-	cube.vx *= (1 - CUBE_AIR_FRICTION); // air resistance
+      cube.grounded = false;
+      cube.vx *= (1 - CUBE_AIR_FRICTION);
     }
 
-    // Cube non-jitter-inator
     if (abs(cube.vx) < 0.01) cube.vx = 0;
-
-    // Cube terminal velocity
     if (cube.vy > 130) cube.vy = 130;
+  }
 }
 
 // Player collisions (made with love + chat)
@@ -302,7 +290,7 @@ function playerAABB(px = player.x, py = player.y) {
     }
 }
 
-function boxAABB() {
+function boxAABB(cube) {
     return {
 	minX: cube.x - cube.w / 2,
 	maxX: cube.x + cube.w / 2,
@@ -311,7 +299,7 @@ function boxAABB() {
     };
 }
 
-function resolveXCollision(collider) {
+function resolveXCollision(collider, cube) {
     const p = playerAABB();
 
     if (!aabbIntersect(p, collider)) return;
@@ -331,7 +319,7 @@ function resolveXCollision(collider) {
 
 }
 
-function resolveYCollision(collider, prevY) {
+function resolveYCollision(collider, prevY, cube) {
     const p = playerAABB();
 
     if (!aabbIntersect(p, collider)) return;
@@ -375,6 +363,8 @@ function getViewBounds() {
     };
 }
 
+// Drawing stuff
+
 function floorHeight(worldX) {
     let SCALE;
     let AMP;
@@ -402,7 +392,7 @@ function drawWavyFloor() {
     // Get view plane
     const view = getViewBounds();
 
-    const step = 3;
+    const step = 10;
     const startX = floor(view.minX / step) * step;
     const endX = ceil(view.maxX / step) * step;
     
@@ -450,6 +440,19 @@ function drawFloorGrid() {
 
     pop();
 }
+
+function spawnCube(x, y) {
+  cubes.push({
+    x,
+    y,
+    w: 50,
+    h: 50,
+    vx: 0,
+    vy: 0,
+    grounded: false
+  });
+}
+
 
 // WebSocket stuff
 function connectSocket() {
