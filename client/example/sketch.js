@@ -139,20 +139,27 @@ function draw() {
     // Draw n amount of cubes
     for (const cube of cubes) {
 	push();
-	translate(cube.x, cube.y + 16, 0);
+	translate(cube.x, cube.y, 0);
 	stroke(2);
-	box(
-	    cube.w,
-	    cube.h,
-	    sqrt(cube.vx * cube.vx + cube.vy * cube.vy) * 16
-	);
+	// box(
+	//     cube.w,
+	//     cube.h,
+	//     //sqrt(cube.vx * cube.vx + cube.vy * cube.vy) * 16
+	// );
+	beginShape();
+	vertex(-25,25 + 16);
+	vertex(-25,-25 + 16);
+	vertex(25,-25 + 16);
+	vertex(25,25 + 16);
+	endShape(CLOSE);
 	pop();
     }
     
     // animation(sprite_sheet, x, y); This line got comented out
     //console.log("x: " + player.x + " y: " + player.y + " vx: " + player.vx + " vy: " + player.vy);
     //console.log("camX: " + camera.eyeX, "camY: " + camera.eyeY);
-
+    console.log(grounded);
+    
     //loop though players and draws them
     for (let id in players) {
 	if (id !== myId) {
@@ -339,6 +346,7 @@ function resolveYCollision(collider, prevY, cube) {
 	player.y = collider.maxY + player.h;
 	player.vy = 0;
 	cube.vy -= 0.5;
+	player.grounded = true;
     }
 }
 
@@ -392,13 +400,13 @@ function drawWavyFloor() {
     // Get view plane
     const view = getViewBounds();
 
-    const step = 10;
+    const step = 5;
     const startX = floor(view.minX / step) * step;
     const endX = ceil(view.maxX / step) * step;
     
     //drawing the floor
     push();
-    stroke(100);
+    //stroke(100); //enable/disable wireframe
     fill(100, 200, 100);
     
     beginShape(TRIANGLE_STRIP);
@@ -443,13 +451,13 @@ function drawFloorGrid() {
 
 function spawnCube(x, y) {
   cubes.push({
-    x,
-    y,
-    w: 50,
-    h: 50,
-    vx: 0,
-    vy: 0,
-    grounded: false
+      x,
+      y,
+      w: 50,
+      h: 50,
+      vx: 0,
+      vy: 0,
+      grounded: false
   });
 }
 
