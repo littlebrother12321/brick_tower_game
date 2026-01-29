@@ -42,7 +42,7 @@ const player = {
     h: 32
 }
 
-const cubes = []
+//const cubes = []
 
 const CUBE_FRICTION = 0.2;
 const CUBE_AIR_FRICTION = 0.05;
@@ -98,6 +98,10 @@ function setup() {
 
     spawnCube(-100, -5000);
     spawnCube(0, -5050);
+
+    physicsSetup((x) => floorHeight(x), {
+	gravity: g * 10
+    });
     
     noStroke();
     fill(0,200,0);
@@ -137,6 +141,7 @@ function draw() {
     textFont(font)    
 
     // Draw n amount of cubes
+    /*
     for (const cube of cubes) {
 	push();
 	translate(cube.x, cube.y, 0);
@@ -151,6 +156,20 @@ function draw() {
 	vertex(-25,-25 + 16);
 	vertex(25,-25 + 16);
 	vertex(25,25 + 16);
+	endShape(CLOSE);
+	pop();
+    }
+    */
+
+    // Draw n amount of cubes
+    for( const b of bricks ) {
+	const verts = b.getCorners();
+
+	push();
+	beginShape();
+	for (const v of verts) {
+	    vertex(v.x, v.y);
+	};
 	endShape(CLOSE);
 	pop();
     }
@@ -231,9 +250,9 @@ function updatePhysics() {
 
     // ---- X AXIS ----
     player.x += round(player.vx);
-    for (const cube of cubes) {
-	resolveXCollision(boxAABB(cube), cube);
-    }
+    // for (const cube of cubes) {
+    // 	resolveXCollision(boxAABB(cube), cube);
+    // }
 
     
     // ---- Y AXIS ----
@@ -253,14 +272,17 @@ function updatePhysics() {
     // Terminal velocity
     if (player.vy > 130) player.vy = 130;
 
+    physicsTick(1 / 60);
+    
     // box
-    for (const cube of cubes) {
-	resolveYCollision(boxAABB(cube), prevY, cube);
-    }
-    updateCubePhysics();
+    // for (const cube of cubes) {
+    // 	resolveYCollision(boxAABB(cube), prevY, cube);
+    // }
+    //updateCubePhysics();
 
 }
 
+/*
 function updateCubePhysics() {
   for (const cube of cubes) {
     cube.vy += g;
@@ -286,6 +308,7 @@ function updateCubePhysics() {
     if (cube.vy > 130) cube.vy = 130;
   }
 }
+*/
 
 // Player collisions (made with love + chat)
 function playerAABB(px = player.x, py = player.y) {
@@ -449,16 +472,22 @@ function drawFloorGrid() {
     pop();
 }
 
-function spawnCube(x, y) {
+/*
+  function spawnCube(x, y) {
   cubes.push({
-      x,
-      y,
-      w: 50,
-      h: 50,
-      vx: 0,
-      vy: 0,
-      grounded: false
+  x,
+  y,
+  w: 50,
+  h: 50,
+  vx: 0,
+  vy: 0,
+  grounded: false
   });
+  }
+*/
+
+function spawnCube(x, y) {
+    new Brick(x, y, 50);
 }
 
 
