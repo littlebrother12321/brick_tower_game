@@ -415,11 +415,13 @@ function floorHeight(worldX) {
     // const h = (n - 229) * 2;
 
     // return BASE + h * AMP;
+    
     if (worldX < 0) {
-	return worldX;
+     	return pow(5, worldX);
     } else {
-	return 0;
+     	return pow(1.01, worldX);
     }
+
     //return pow(1.02, worldX) / 50000;
     //return pow(worldX, 1/6) / 500000
 }
@@ -440,7 +442,7 @@ function drawWavyFloor() {
     beginShape(TRIANGLE_STRIP);
     for (let x = startX; x <= endX; x += step) {
 	const y = floorHeight(x);
-	vertex(x, y + 16, -1);
+	vertex(x, y - 25, -1);
 	vertex(x, y + 5000, -1);
     }
     endShape();
