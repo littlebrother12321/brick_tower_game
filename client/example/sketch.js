@@ -47,6 +47,9 @@ const player = {
 const CUBE_FRICTION = 0.2;
 const CUBE_AIR_FRICTION = 0.05;
 
+let LowestLoadedX=0;
+let HighestLoadedX=0;
+
 // Buttons to connect to local websocket
 let connectButton;
 let disconnectButton;
@@ -102,6 +105,9 @@ function setup() {
     physicsSetup((x) => floorHeight(x), {
 	gravity: g * 10
     });
+    addGroundSpan(-1000,1000);
+    LowestLoadedX=-1000;
+    HighestLoadedX=1000;
     
     noStroke();
     fill(0,200,0);
@@ -169,6 +175,13 @@ function draw() {
 	beginShape();
 	for (const v of verts) {
 	    vertex(v.x, v.y);
+	    if(v.x>HighestLoadedX){
+	        addGroundSpan(HighestLoadedX,HighestLoadedX+1000);
+	        HighestLoadedX=HighestLoadedX+1000;
+	    } else if(v.x<LowestLoadedX){
+	        addGroundSpan(LowestLoadedX-1000,LowestLoadedX);
+	        LowestLoadedX=LowestLoadedX-1000;
+	    }
 	};
 	endShape(CLOSE);
 	pop();
