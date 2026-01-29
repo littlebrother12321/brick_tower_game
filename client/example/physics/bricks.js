@@ -42,7 +42,7 @@ function buildGround() {
 
   const bodies = [];
   const step = 10;
-  const span = 4000;
+  const span = 8000;
   const thickness = 50;
 
   for (let x = -span / 2; x < span / 2; x += step) {
@@ -146,19 +146,19 @@ window.bricks = bricks;
 //thing
 physicsSetup((x) => 300 + Math.sin(x * 0.01) * 40);
 
-new Brick(0, 0);
-new Brick(20, 0);
+//new Brick(0, 0);
+//new Brick(20, 0);
 let time = 0;
 setInterval(() => {
   physicsTick();
 
-  for (const b of bricks) {
-    if (time < 100 || Matter.Query.collides(b.body, [groundBody]).length > 0) {
-      console.log(b.getCorners());
-    }
-    if (Matter.Query.collides(b.body, [groundBody]).length > 0) {
-      console.log("ground collision!");
-    }
-  }
+  // for (const b of bricks) {
+  //   if (time < 100 || Matter.Query.collides(b.body, [groundBody]).length > 0) {
+  //     console.log(b.getCorners());
+  //   }
+  //   if (Matter.Query.collides(b.body, [groundBody]).length > 0) {
+  //     console.log("ground collision!");
+  //   }
+  //}
   time++;
 }, 16);

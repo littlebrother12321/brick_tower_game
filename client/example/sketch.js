@@ -34,7 +34,7 @@ let grounded = false;
 
 const player = {
     x: -64,
-    y: -500,
+    y: 0,
     vx: 0,
     vy: 0,
     grounded: false,
@@ -96,8 +96,8 @@ function setup() {
     disconnectButton.position(20, 80);
     disconnectButton.mousePressed(disconnectSocket);
 
-    spawnCube(-100, -5000);
-    spawnCube(0, -5050);
+    // spawnCube(-100, -5000);
+    // spawnCube(0, -5050);
 
     physicsSetup((x) => floorHeight(x), {
 	gravity: g * 10
@@ -397,24 +397,29 @@ function getViewBounds() {
 // Drawing stuff
 
 function floorHeight(worldX) {
-    let SCALE;
-    let AMP;
-    let BASE
-    //return floorY + cos(worldX * 1 + 45) * 25;
+    // let SCALE;
+    // let AMP;
+    // let BASE
+    // //return floorY + cos(worldX * 1 + 45) * 25;
+    // if (worldX < 0) {
+    // 	SCALE = 0.00000002;
+    // 	AMP = -0.5;
+    // 	BASE = -floorY;
+    // } else {
+    // 	SCALE = 0.0002;
+    // 	AMP = 2.75;
+    // 	BASE = floorY;
+    // }
+
+    // const n = noise(worldX * SCALE);
+    // const h = (n - 229) * 2;
+
+    // return BASE + h * AMP;
     if (worldX < 0) {
-	SCALE = 0.00000002;
-	AMP = -0.5;
-	BASE = -floorY;
+	return worldX;
     } else {
-	SCALE = 0.0002;
-	AMP = 1;
-	BASE = floorY;
+	return 0;
     }
-
-    const n = noise(worldX * SCALE);
-    const h = (n - 229) * 2;
-
-    return BASE + h * AMP;
     //return pow(1.02, worldX) / 50000;
     //return pow(worldX, 1/6) / 500000
 }
