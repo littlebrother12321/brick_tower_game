@@ -7,7 +7,7 @@ const { Engine, World, Bodies, Body } = Matter;
 
 let engine = null;
 let world = null;
-let groundBody = null;
+let groundComposite = null;
 
 /* ---------- EXPOSED STATE ---------- */
 
@@ -29,23 +29,16 @@ function physicsSetup(groundFunc, options = {}) {
   engine.constraintIterations = 4;
   engine.enableSleeping = true;
 
-  buildGround();
+  groundComposite = Matter.Composite.create({ label: "ground" });
+  World.add(world, groundComposite);
 }
 
 /* ---------- GROUND ---------- */
 
-function buildGround() {
-  if (groundBody) {
-    World.remove(world, groundBody);
-    groundBody = null;
-  }
-
-  const bodies = [];
-  const step = 10;
-  const span = 8000;
+function addGroundSpan(xStart, xEnd, step = 10) {
   const thickness = 50;
 
-  for (let x = -span / 2; x < span / 2; x += step) {
+  for (let x = xStart; x < xEnd; x += step) {
     const y1 = groundAtX(x);
     const y2 = groundAtX(x + step);
 
@@ -62,15 +55,8 @@ function buildGround() {
     });
 
     Body.setAngle(segment, angle);
-    bodies.push(segment);
+    Matter.Composite.add(groundComposite, segment);
   }
-
-  groundBody = Body.create({
-    isStatic: true,
-    parts: bodies,
-  });
-
-  World.add(world, groundBody);
 }
 
 /* ---------- BRICK ---------- */
@@ -143,22 +129,16 @@ window.physicsSetup = physicsSetup;
 window.physicsTick = physicsTick;
 window.Brick = Brick;
 window.bricks = bricks;
+window.addGroundSpan = addGroundSpan;
+
 //thing
-physicsSetup((x) => 300 + Math.sin(x * 0.01) * 40);
+// physicsSetup((x) => 300 + Math.sin(x * 0.01) * 40);
+// addGroundSpan(-2000, 2000);
 
-//new Brick(0, 0);
-//new Brick(20, 0);
-let time = 0;
-setInterval(() => {
-  physicsTick();
-
-  // for (const b of bricks) {
-  //   if (time < 100 || Matter.Query.collides(b.body, [groundBody]).length > 0) {
-  //     console.log(b.getCorners());
-  //   }
-  //   if (Matter.Query.collides(b.body, [groundBody]).length > 0) {
-  //     console.log("ground collision!");
-  //   }
-  //}
-  time++;
-}, 16);
+// new Brick(0, -1000);
+// //new Brick(20, 0);
+// let time = 0;
+// setInterval(() => {
+//   physicsTick();
+//   console.log(bricks[0].y);
+// }, 16);
