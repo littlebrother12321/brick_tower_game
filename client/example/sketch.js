@@ -11,6 +11,8 @@ const g = 0.1;
 // The x-equivalent of gravity
 const FRICTION = 0.5
 
+// offline mode
+let offline = true;
 
 // Visual stuff
 const halfScreenX = window.innerWidth/2;
@@ -123,8 +125,11 @@ function draw() {
     clear();
 
     // Runs updatephysics, look below for details
-    updatePhysics();
 
+    if (offline) {
+	updatePhysics();
+	physicsTick(1 / 60);
+    }
     
     // Camera codes
     camera.setPosition(player.x, player.y, 500);
@@ -173,8 +178,9 @@ function draw() {
 
 	push();
 	beginShape();
+	stroke(2);
 	for (const v of verts) {
-	    vertex(v.x, v.y);
+	    vertex(v.x, v.y + 41);
 	    if(v.x>HighestLoadedX){
 	        addGroundSpan(HighestLoadedX,HighestLoadedX+1000);
 	        HighestLoadedX=HighestLoadedX+1000;
@@ -190,7 +196,7 @@ function draw() {
     // animation(sprite_sheet, x, y); This line got comented out
     //console.log("x: " + player.x + " y: " + player.y + " vx: " + player.vx + " vy: " + player.vy);
     //console.log("camX: " + camera.eyeX, "camY: " + camera.eyeY);
-    console.log(grounded);
+    //console.log(grounded);
     
     //loop though players and draws them
     for (let id in players) {
@@ -233,6 +239,13 @@ function draw() {
 } // end of draw function
 
 // Physics stuff
+
+function keyPressed() {
+    if (keyCode === BACKSPACE) {
+	spawnCube(player.x, player.y - 200);
+    }
+}
+
 function updatePhysics() {
     
     // input
@@ -244,16 +257,14 @@ function updatePhysics() {
     }
 
     if (keyIsDown(16)) {
-	if ((keyIsDown(LEFT_ARROW) || keyIsDown(65)) && player.vx >= -7) player.vx -= 2;
-	if ((keyIsDown(RIGHT_ARROW) || keyIsDown(68)) && player.vx <= 7) player.vx += 2;
+	if ((keyIsDown(LEFT_ARROW) || keyIsDown(65)) /*&& player.vx >= -7*/) player.vx -= 2;
+	if ((keyIsDown(RIGHT_ARROW) || keyIsDown(68)) /*&& player.vx <= 7*/) player.vx += 2;
 
 	if ((keyIsDown(UP_ARROW) || keyIsDown(87)) && grounded) {
 	    player.vy = -4;
 	}
     }
 
-    if (keyIsDown(BACKSPACE)) spawnCube(player.x, player.y - 1000);
-    
     // gravity
     if (!grounded)  player.vy += g;
 
@@ -263,6 +274,31 @@ function updatePhysics() {
 
     // ---- X AXIS ----
     player.x += round(player.vx);
+    for(const b of bricks) {
+	if (!playerVsBrick(b)) continue;
+
+	// Player → brick impulse
+	if (offline) {
+	    if (player.vx !== 0) {
+		Matter.Body.applyForce(
+		    b.body,
+		    b.body.position,
+		    { x: player.vx * 0.0005, y: 0 }
+		);
+	    }
+	}
+	
+	// Player stops, brick reacts
+	if (player.vx > 0) {
+	    player.x = b.body.bounds.min.x - player.w / 2;
+	} else if (player.vx < 0) {
+	    player.x = b.body.bounds.max.x + player.w / 2;
+	}
+
+	player.vx = 0;
+    }
+
+
     // for (const cube of cubes) {
     // 	resolveXCollision(boxAABB(cube), cube);
     // }
@@ -272,6 +308,23 @@ function updatePhysics() {
     const prevY = round(player.y);
     player.y += player.vy;
 
+    for (const b of bricks) {
+	const bounds = b.body.bounds;
+
+	if (
+	    player.vy >= 0 &&
+		player.y <= bounds.min.y &&
+		player.y + player.vy >= bounds.min.y &&
+		player.x > bounds.min.x &&
+		player.x < bounds.max.x
+	) {
+	    player.y = bounds.min.y;
+	    player.vy = 0;
+	    grounded = true;
+	}
+    }
+    
+    
     // floor
     const footY = floorHeight(player.x);
     
@@ -285,8 +338,6 @@ function updatePhysics() {
     // Terminal velocity
     if (player.vy > 130) player.vy = 130;
 
-    physicsTick(1 / 60);
-    
     // box
     // for (const cube of cubes) {
     // 	resolveYCollision(boxAABB(cube), prevY, cube);
@@ -407,33 +458,45 @@ function getViewBounds() {
     };
 }
 
+function playerVsBrick(brick) {
+  const p = playerAABB();
+  const b = brick.body.bounds;
+
+  return (
+    p.minX < b.max.x &&
+    p.maxX > b.min.x &&
+    p.minY < b.max.y &&
+    p.maxY > b.min.y
+  );
+}
+
 // Drawing stuff
 
 function floorHeight(worldX) {
-    // let SCALE;
-    // let AMP;
-    // let BASE
-    // //return floorY + cos(worldX * 1 + 45) * 25;
-    // if (worldX < 0) {
-    // 	SCALE = 0.00000002;
-    // 	AMP = -0.5;
-    // 	BASE = -floorY;
-    // } else {
-    // 	SCALE = 0.0002;
-    // 	AMP = 2.75;
-    // 	BASE = floorY;
-    // }
-
-    // const n = noise(worldX * SCALE);
-    // const h = (n - 229) * 2;
-
-    // return BASE + h * AMP;
-    
+    let SCALE;
+    let AMP;
+    let BASE
+    //return floorY + cos(worldX * 1 + 45) * 25;
     if (worldX < 0) {
-     	return pow(5, worldX);
+    	SCALE = 0.00000002;
+     	AMP = -0.5;
+     	BASE = -floorY;
     } else {
-     	return pow(1.01, worldX);
+     	SCALE = 0.0002;
+     	AMP = 2.75;
+     	BASE = floorY;
     }
+
+    const n = noise(worldX * SCALE);
+    const h = (n - 229) * 2;
+
+    return BASE + h * AMP;
+    
+    // if (worldX < 0) {
+    //  	return pow(5, worldX);
+    // } else {
+    //  	return worldX * 2;
+    // }
 
     //return pow(1.02, worldX) / 50000;
     //return pow(worldX, 1/6) / 500000
@@ -455,7 +518,7 @@ function drawWavyFloor() {
     beginShape(TRIANGLE_STRIP);
     for (let x = startX; x <= endX; x += step) {
 	const y = floorHeight(x);
-	vertex(x, y - 25, -1);
+	vertex(x, y + 16, -1);
 	vertex(x, y + 5000, -1);
     }
     endShape();
@@ -507,7 +570,14 @@ function drawFloorGrid() {
 */
 
 function spawnCube(x, y) {
-    new Brick(x, y, 50);
+    if (offline) {
+	new Brick(x, y, 50);
+    } else {
+	socket.send(JSON.stringify({
+	    type: "spawn_brick",
+	    x, y
+	}));
+    }
 }
 
 
@@ -529,14 +599,42 @@ function connectSocket() {
     // do stuff when socket is opened
     socket.onopen = () => {
 	console.log("socket connected");
+	offline = false;
 	sendState();
 	sendInitialState = true;
     };
+
+    socket.onclose = () => {
+	offline = true;
+    }
 
     // do stuff when message is recieved
     socket.onmessage = (event) => {
 	const msg = JSON.parse(event.data);
 
+	if (msg.type === "world") {
+	    for (const id in msg.players) {
+		if (id !== myId) {
+		    players[id] = msg.players[id];
+		} else {
+		    player.x = lerp(player.x, msg.players[id].x, 0.3)
+		    player.y = lerp(player.y, msg.players[id].y, 0.3)
+		}
+	    }
+
+	    //bricks
+	    for (let i = 0; i < bricks.length; i++) {
+		Matter.Body.setPosition(
+		    bricks[i].body,
+		    msg.bricks[i]
+		);
+		Matter.Body.setAngle(
+		    bricks[i].body,
+		    msg.bricks[i].angle
+		);
+	    }
+	}
+	
 	switch (msg.type) {
 	case "welcome":
 	    myId = msg.id;
@@ -578,10 +676,20 @@ function disconnectSocket() {
 
 function sendState() {
   if (!socket || socket.readyState !== WebSocket.OPEN) return;
+    
+    socket.send(JSON.stringify({
+	type: "input",
+	input: getInput();
+    }));
+}
 
-  socket.send(JSON.stringify({
-    x: player.x, y: player.y, vx: player.vx, vy: player.vy
-}));
+function getInput() {
+    return {
+	left: keyIsDown(LEFT_ARROW) || keyIsDown(65),
+	right: keyIsDown(RIGHT_ARROW) || keyIsDown(68),
+	jump: (keyIsDown(UP_ARROW) || keyIsDown(87)),
+	sprint: keyIsDown(16)
+    };
 }
 
 // close socket before refreshing page

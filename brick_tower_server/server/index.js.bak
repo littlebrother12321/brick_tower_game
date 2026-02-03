@@ -1,0 +1,73 @@
+// -----
+// La Server
+// -----
+// Importing the web socket
+const WebSocket = require("ws");
+
+// Make new Socket on Port 8008
+const wss = new WebSocket.Server({ port: 8080, path: "/p5.websocket-dev" });
+
+let nextId = 1;
+
+// When is connection'd, stuff here in do
+wss.on('connection', (ws) => {
+    // Increment user id
+    const uid = String(nextId++)
+
+    // Say a thing when a client is connect
+    console.log('yooo a dude connected!', uid);
+
+    // Send client respective id and initial connect message
+    ws.send(JSON.stringify({
+	event: "connect",
+	uid
+    }));
+
+    wss.clients.forEach(client => {
+	if (client !== ws && client.readyState === WebSocket.OPEN) {
+	    ws.send(JSON.stringify({
+		event: "connect",
+		uid: client.uid
+	    }));
+	}
+    });
+
+    // store uids on socket
+    ws.uid = uid
+    
+    // When message is get    
+    ws.on("message", (msg) => {
+	let data;
+	try {
+	    data = JSON.parse(msg.toString());
+	} catch {
+	    return;
+	}
+	
+	// tell clients stuff
+	console.log("received: %s", msg, uid);
+	wss.clients.forEach(client => {
+	    //client.readyState !== ws &&
+	    if (client.readyState === WebSocket.OPEN) {
+		client.send(JSON.stringify({
+		    event: "data",
+		    uid,
+		    data
+		}));
+	    }
+	});
+    });
+    
+    ws.on("close", () => {
+	wss.clients.forEach(client => {
+	    if (client.readyState === WebSocket.OPEN) {
+		client.send(JSON.stringify({
+		    event: "disconnect",
+		    uid
+		}));
+	    }
+	});
+    });
+});
+
+console.log("server on ws://localhost:8080/p5-websocket.dev");

@@ -1,0 +1,80 @@
+<!-- La Client, connects to la Server. -->
+<!-- this file is the entire client -->
+
+<header>
+<title>Jimmy Joe Jefferson</title>
+ <h4></h4>
+    <form>
+        <input type="text" name="message">
+    </form>
+<style>
+    ul#messages {
+        margin: 0 auto;
+        max-width: 56rem;
+        padding: 0;
+        list-style-type: none;
+    }
+
+    ul#messages>li {
+        margin-bottom: 1rem;
+    }
+
+    header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .left {
+        text-align: left;
+        color: green;
+    }
+
+    .right {
+        text-align: right;
+        color: blue;
+    }
+</style>
+</header>
+<ul id="messages"></ul>
+
+<script>
+    // Prompt for the client's username
+    const usernameIn = window.prompt("Please enter your name (alphanumeric only):");
+    function stripInvalidCharacters(inputString) {
+        return inputString.replace(/[^A-Za-z0-9\s]/g, '').substring(0, 50);
+    }
+    const username = stripInvalidCharacters(usernameIn);
+
+    // Check if the username is provided
+    if (!username) {
+        alert("You must enter a username to proceed.");
+        throw new Error("Username not provided.");
+    }
+
+    const title = document.querySelector("h4");
+    title.innerHTML = `Logged in as ${username}`;
+
+    const ws = new WebSocket("ws://127.0.0.1:8080");
+
+    const form = document.querySelector("form");
+    form.onsubmit = (e) => {
+        e.preventDefault();
+        const data = new FormData(form);
+        // Send the message along with the username
+        ws.send(` \"${data.get("message")}\" Said ${username}`);
+        form.reset();  // Clear the input field after sending
+    }
+
+    const ul = document.querySelector("ul");
+    ws.onmessage = (e) => {
+        console.log(e);
+        if (typeof e.data === "string") {
+            ul.innerHTML += `<li>${e.data}</li>`;
+        } else {
+            e.data.text().then((msg) => {
+                ul.innerHTML += `<li>${msg}</li>`;
+            });
+        }
+    }
+</script>
