@@ -679,7 +679,7 @@ function sendState() {
     
     socket.send(JSON.stringify({
 	type: "input",
-	input: getInput();
+	input: getInput()
     }));
 }
 
