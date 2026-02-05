@@ -1,4 +1,6 @@
 .parcel-cache
 .parcelrc
+package-lock.json
+package.json
 .vscode
 node_modules

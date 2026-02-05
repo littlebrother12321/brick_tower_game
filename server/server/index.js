@@ -16,20 +16,19 @@ const wss = new WebSocket.Server({
 const Matter = require("matter-js");
 global.Matter = Matter;
 
-//Noise (used for floor)
-const simplexNoise = require("simplex-noise");
+// Set noise function (must match client)
+const createNoise2D  = require("simplex-noise");
 const seedrandom = require("seedrandom");
 
 const SEED = "brick-tower-world"; // ← must match client
 
 const rng = seedrandom(SEED);
-const noise = new SimplexNoise(rng);
+//const noise = new createNoise2D(rng);
 
 function terrainNoise(x) {
-  return noise.noise2D(x, 0);
+    //return noise(x, 0);
+    return createNoise2D(rng);
 }
-
-module.exports = { terrainNoise };
 
 const {
   physicsSetup,
@@ -40,31 +39,19 @@ const {
 } = require("./bricks_server.js");
 
 function floorHeight(x) {
-//     let SCALE;
-//     let AMP;
-//     let BASE
-//     //return floorY + cos(worldX * 1 + 45) * 25;
-//     if (worldX < 0) {
-//     	SCALE = 0.00000002;
-//      	AMP = -0.5;
-//      	BASE = -floorY;
-//     } else {
-//      	SCALE = 0.0002;
-//      	AMP = 2.75;
-//      	BASE = floorY;
-//     }
+  const BASE = 0;
+  const AMP = 60;
+  const SCALE = 0.005;
 
-// //    const n = p5.noise(worldX * SCALE);
-//     const h = (n - 229) * 2;
-
-//    return BASE + h * AMP;
-    return 1;
+  return BASE + terrainNoise(x * SCALE) * AMP;
 }
 
+physicsSetup(floorHeight, { gravity: 1 });
 
-physicsSetup((x) => floorHeight(x), {
-    gravity: 1
-});
+
+// physicsSetup((x) => floorHeight(x), {
+//     gravity: 1
+// });
 
 // Init UUID libraries
 const crypto = require('crypto');

@@ -14,6 +14,29 @@ const FRICTION = 0.5
 // offline mode
 let offline = true;
 
+// noise function (must match server) (loaded from index.html)
+//import { terrainNoise } from "./noise.js";
+// async function terrainNoise(x) {
+//     const noise = await import("./noise.js");
+//     return noise.terrainNoise(x);
+// }
+
+import { createNoise2D } from "simplex-noise";
+import seedrandom from "seedrandom";
+
+// import("simplex-noise");
+// import("seedrandom");
+
+const SEED = "brick-tower-world";
+
+const rng = seedrandom(SEED);
+const noise = new createNoise2D(rng);
+
+function terrainNoise(x) {
+  return noise(x, 0);
+  //  return createNoise2D(rng);
+}
+
 // Visual stuff
 const halfScreenX = window.innerWidth/2;
 const halfScreenY = window.innerHeight/2;
@@ -89,8 +112,8 @@ function setup() {
     // Testing localhost websocket
     //connectWebsocket("ws://localhost:8080/p5.websocket-dev")
 
-    noiseDetail(4, 8);
-    noiseSeed(1337);
+    // noiseDetail(4, 8);
+    // noiseSeed(1337);
 
     // Create buttons
     connectButton = createButton("Connect");
@@ -473,24 +496,30 @@ function playerVsBrick(brick) {
 // Drawing stuff
 
 function floorHeight(worldX) {
-    let SCALE;
-    let AMP;
-    let BASE
-    //return floorY + cos(worldX * 1 + 45) * 25;
-    if (worldX < 0) {
-    	SCALE = 0.00000002;
-     	AMP = -0.5;
-     	BASE = -floorY;
-    } else {
-     	SCALE = 0.0002;
-     	AMP = 2.75;
-     	BASE = floorY;
-    }
+    const BASE = 0;
+    const AMP = 60;
+    const SCALE = 0.005;
 
-    const n = noise(worldX * SCALE);
-    const h = (n - 229) * 2;
+    return BASE + terrainNoise(worldX * SCALE).value * AMP;
 
-    return BASE + h * AMP;
+    // let SCALE; //legacy noise gen
+    // let AMP;
+    // let BASE
+    // //return floorY + cos(worldX * 1 + 45) * 25;
+    // if (worldX < 0) {
+    // 	SCALE = 0.00000002;
+    //  	AMP = -0.5;
+    //  	BASE = -floorY;
+    // } else {
+    //  	SCALE = 0.0002;
+    //  	AMP = 2.75;
+    //  	BASE = floorY;
+    // }
+
+    // const n = noise(worldX * SCALE);
+    // const h = (n - 229) * 2;
+
+    // return BASE + h * AMP;
     
     // if (worldX < 0) {
     //  	return pow(5, worldX);
