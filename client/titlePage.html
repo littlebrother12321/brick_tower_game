@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tower of Bagel</title>
+    <style>
+        #title{
+            display: flex;
+            justify-content: center; /* Centers horizontally */
+            align-items: center;     /* Centers vertically */
+            height: 33vh;           /* Sets the container height to 100% of the viewport height */
+            width: 100vw;
+            font-size: 1.5em;
+            letter-spacing: 1vw;
+            
+        }
+        .buttons{
+            display: flex;
+            justify-content: center; /* Centers horizontally */
+            align-items:center;     /* Centers vertically */
+            height: 33vh;           /* Sets the container height to 100% of the viewport height */
+            width: 100vw;
+            flex-direction: column;
+            font-size: 1em;
+            
+        }
+        .button{
+            display: flex;
+            justify-content: center; /* Centers horizontally */
+            align-items:center;     /* Centers vertically */
+            text-align: center;
+            width: 25%;
+            height: 33%;
+            color: black;
+            
+        }
+        
+        
+
+        /* Background video */
+        .bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -1;
+        }
+        .black-border{
+            border-color: black;
+            border-width: 20;
+            border-style: solid;
+        }
+        .green-fill{
+            background-color: green;
+        }
+
+        
+    </style>
+</head>
+<body>
+
+    <!-- Background video -->
+    <video class="bg-video" autoplay muted loop>
+        <source src="test.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <!-- Foreground content -->
+    <div>
+
+        <div id="title">
+            <div class="black-border green-fill">
+            <h1>TOWER</h1>
+            <h3>of</h3>
+            <h1>BAGEL</h1>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="page1.html" class="button black-border green-fill">PLAY</a>
+            <a href="page2.html" class="button black-border green-fill">LEADERBOARD</a>
+            <a href="page3.html" class="button black-border green-fill">SETTINGS</a>
+        </div>
+
+        <div></div>
+
+    </div>
+
+</body>
+</html>
