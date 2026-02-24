@@ -1,17 +1,102 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <!--<script type="module" src="/src/depends/p5.min.js.js"></script>
-    <script type="module" src="/src/depends/planck.min.js.js"></script>
-    <script type="module" src="/src/depends/p5play.js.js"></script>
-    <script type="module" src="/src/depends/bricks.js"></script> -->
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <title>Tower of Bagel</title>
+    <style>
+        .title{
+            display: flex;
+            justify-content: center; /* Centers horizontally */
+            align-items: center;     /* Centers vertically */
+            height: 33vh;           /* Sets the container height to 100% of the viewport height */
+            width: 100vw;
+            font-size: 1.5em;
+            letter-spacing: 1vw;
+            /* border-radius: 12px; */
+            margin-top: 3rem;
+            margin-bottom: 2rem;
+            
+        }
+        .buttons{
+            display: flex;
+            justify-content: center; /* Centers horizontally */
+            align-items:center;     /* Centers vertically */
+            height: 33vh;           /* Sets the container height to 100% of the viewport height */
+            width: 100vw;
+            flex-direction: column;
+            font-size: 1em;
+            /* margin: 1px; */
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            
+            
+        }
+        .button{
+            display: flex;
+            justify-content: center; /* Centers horizontally */
+            align-items:center;     /* Centers vertically */
+            text-align: center;
+            width: 25vh;
+            height: 33vw;
+            color: black;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            
+        }
+        
+        
+
+        /* Background video */
+        .bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -1;
+            
+        }
+        .black-border{
+            border-color: black;
+            border-width: 20;
+            border-style: solid;
+        }
+        .green-fill{
+            background-color: green;
+        }
+
+        
+    </style>
+</head>
+<body>
+
+    <!-- Background video -->
+    <video class="bg-video" autoplay muted loop>
+        <source src="test.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <!-- Foreground content -->
+    <div>
+
+        <div class="title">
+            <div class="black-border green-fill">
+            <h1>TOWER</h1>
+            <h3>of</h3>
+            <h1>BAGEL</h1>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="game.html" class="button black-border green-fill">PLAY</a>
+            <a href="page2.html" class="button black-border green-fill">LEADERBOARD</a>
+            <a href="page3.html" class="button black-border green-fill">SETTINGS</a>
+        </div>
+
+        <div></div>
+
+    </div>
+
+</body>
 </html>
