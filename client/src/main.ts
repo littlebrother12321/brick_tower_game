@@ -27,7 +27,7 @@ const sketch = (p: p5) => {
     // Sended initial state?
     let sendInitialState = false;
     // The camera
-    let camera1;
+    //let cam: p5.camera;
     // the sprite sheet
     let sprite_sheet;
     // The gravity
@@ -105,7 +105,7 @@ const sketch = (p: p5) => {
 	p.background(200);
 	p.frameRate(60);
 
-	camera1 = p.createCamera();
+	//cam = p.createCamera();
 
 	// Preloads
 	peopleFont = await p.loadFont("/WeThePeople.ttf");
@@ -139,7 +139,7 @@ const sketch = (p: p5) => {
 	//myColor = color(random(255), 128, random(255));
 	p.describe("A very fun game where you build a tower with bricks.");
 
-	console.log("Setup is yes!");
+	console.log("Setup is yes!, starting draw.");
     }
 
     // we gonna do stoof.
@@ -147,7 +147,6 @@ const sketch = (p: p5) => {
     //The draw function draws things
     p.draw = () => {
 
-	console.log("DRAW RUNNING!");
 	p.clear();
 	// Runs updatephysics, look below for details
 
@@ -157,11 +156,12 @@ const sketch = (p: p5) => {
 	}
 
 	// Camera codes
-	camera1.setPosition(player.x, player.y, 500);
-	camera1.lookAt(player.x, player.y, 0);
+	p.camera(player.x, player.y, 500, player.x, player.y, 10, p.sin(player.x / 200), p.cos(player.x / 200), 0);
+	//cam.setPosition(player.x, player.y, 500);
+	//cam.lookAt(player.x, player.y, 0);
 	p.orbitControl(); // fixed camera, now constrained a bit
-	//p.frustum(-halfScreenX / 13, halfScreenX / 13, -halfScreenY / 13, halfScreenY / 13); // Optimize a bit by adding a frustrum (it's upside down, yeah.)
-
+	//cam.frustum(-halfScreenX / 13, halfScreenX / 13, -halfScreenY / 13, halfScreenY / 13); // Optimize a bit by adding a frustrum (it's upside down, yeah.)
+	
 	p.push();
 
 	if (p.frameCount % 1 === 0) {
@@ -222,7 +222,7 @@ const sketch = (p: p5) => {
 	p.translate(p.max([player.x]), p.max([player.y]), 1);
 	// same here
 	//p.animation(sprite_sheet, 0, 0, p.width, p.height);
-	p.box();
+	p.box(player.width, player.height);
 	// Set text color
 	p.fill(0,0,0)
 	// Show text coordinates on player
