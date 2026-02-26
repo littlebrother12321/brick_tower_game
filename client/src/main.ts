@@ -3,7 +3,7 @@ import seedrandom from 'seedrandom';
 import Matter from 'matter-js';
 import p5 from 'p5';
 
-(window as any).p5 = p5
+//(window as any).p5 = p5
 
 //import "./depends/p5.min.js.js";
 //import "./depends/planck.min.js.js";
@@ -69,7 +69,7 @@ const sketch = (p: p5) => {
     // BOx collisions
 
     const player = {
-	x: -64,
+	x: -0,
 	y: 0,
 	vx: 0,
 	vy: 0,
@@ -156,7 +156,14 @@ const sketch = (p: p5) => {
 	}
 
 	// Camera codes
-	p.camera(player.x, player.y, 500, player.x, player.y, 10, p.sin(player.x / 200), p.cos(player.x / 200), 0);
+	//p.camera(player.x, 0, 500, player.x, player.y, 10, p.sin(player.x / 200), p.cos(player.x / 200) ** -1, 0);
+
+	if (player.x >= 0) {
+	    p.camera(player.x, player.y, 500, player.x, player.y, 10, 0, 1, 0);
+	} else {
+	    p.camera(player.x, player.y, -500, player.x, player.y, 10, 0, 1, 0);
+	}
+	    
 	//cam.setPosition(player.x, player.y, 500);
 	//cam.lookAt(player.x, player.y, 0);
 	p.orbitControl(); // fixed camera, now constrained a bit
@@ -191,7 +198,7 @@ const sketch = (p: p5) => {
 		    LowestLoadedX=LowestLoadedX-1000;
 		}
 	    };
-	    p.endShape(CLOSE);
+	    p.endShape(p.CLOSE);
 	    p.pop();
 	}
 	
@@ -247,10 +254,10 @@ const sketch = (p: p5) => {
 
     // Physics stuff
 
-    p.keyPressed = () => {/*
-			     if (keyCode === BACKSPACE) {
-			     spawnCube(player.x, player.y - 200);
-			     }*/
+    p.keyPressed = () => {
+	if (p.keyCode == 8) {
+	     spawnCube(player.x, player.y - 200);
+	 }
 	console.log(p.keyCode);
     }
 
@@ -260,7 +267,7 @@ const sketch = (p: p5) => {
 	if ((p.keyIsDown(p.LEFT_ARROW) || p.keyIsDown(65)) && player.vx >= -4) player.vx -= 1;
 	if ((p.keyIsDown(p.RIGHT_ARROW) || p.keyIsDown(68)) && player.vx <= 4) player.vx += 1;
 
-	if ((p.keyIsDown(p.UP_ARROW) || p.keyIsDown(87)) && grounded) {
+	if ((p.keyIsDown(p.UP_ARROW) || (p.keyIsDown(87) || p.keyIsDown(32))) && grounded) {
 	    player.vy = -2;
 	}
 
