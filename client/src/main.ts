@@ -1,24 +1,10 @@
-import { createNoise2D } from 'simplex-noise';
-import seedrandom from 'seedrandom';
 import Matter from 'matter-js';
-import p5 from 'p5/global';
 
-(window as any).p5 = p5
+import p5 from 'p5';
 
-//import 'p5play';
+;(window as any).p5 = p5;
 
-//import "./depends/p5.min.js.js";
-//import "./depends/planck.min.js.js";
-//import "./depends/p5play.js.js";
 import { physicsSetup, physicsTick, addGroundSpan, bricks, Brick } from "./depends/bricks.js";
-//import "./sketch.js";
-
-//document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-//  <div>
-//    HELLO
-//  </div>
-//`
-
 
 //const sketch = (p: p5) => {
 
@@ -30,8 +16,6 @@ let connected = false;
 let sendInitialState = false;
 // The camera
 //let cam: p5.camera;
-// the sprite sheet
-let sprite_sheet;
 // The gravity
 const g = 0.1;
 // The x-equivalent of gravity
@@ -41,16 +25,21 @@ const FRICTION = 0.5
 let offline = true;
 // noise function (must match server) (loaded from index.html)
 
+import { createNoise2D } from 'simplex-noise';
+import seedrandom from 'seedrandom';
+
 const SEED = "brick-tower-world";
 
+// initialize the noise function & seed
 const rng = seedrandom(SEED);
-// initialize the noise function
-const noise2D = createNoise2D();
+const noise2D = createNoise2D(rng);
 
-console.log(terrainNoise(1));
+//import { create, all } from 'mathjs';
+//const math = create(all);
 
 function terrainNoise(x) {
     return noise2D(x, 0);
+    //return math.random();
     //return createNoise2D(rng);
 }
 
@@ -65,19 +54,36 @@ let floorY = 0;
 let grounded = false;
 
 // Player sprite frame coordinates
+let sprite_sheet: p5.Image;
 const FRAME_W = 32;
 const FRAME_H = 32;
 const FRAMES = 2;
+const ANIM_SPEED = 3;
+let currentFrame = 0;
 
 const player = {
-    x: -0,
-    y: 0,
-    vx: 0,
-    vy: 0,
-    grounded: false,
-    w: 32,
-    h: 32
+     x: -0,
+     y: 0,
+     vx: 0,
+     vy: 0,
+     grounded: false,
+     w: 32,
+     h: 32
 }
+// Make the player matter (get it? pun intendid?)
+let engine = Matter.Engine.create();
+const playerBody = Matter.Bodies.rectangle(player.x, player.y, player.w, player.h, {
+    inertia: Infinity, // Don't need rotating player (for now...)
+    friction: 0.1,
+    frictionAir: 0.02,
+    frictionStatic: 0,
+    restitution: 0,
+    slop: 0.01,
+    label: 'player'
+});
+
+Matter.World.add(engine.world, playerBody);
+
 
 //const cubes = []
 
@@ -110,7 +116,7 @@ window.setup = async function() {
 
     // Preloads
     peopleFont = await loadFont("./WeThePeople.ttf");
-    sprite_sheet = loadImage("/stoof.png");
+    sprite_sheet = await loadImage("/stoof.png");
     //drawingContext.disable(drawingContext.DEPTH_TEST);
 
     // noiseDetail(4, 8);
@@ -168,7 +174,8 @@ window.draw = function() {
       }*/
     
     //Normal camera
-    camera(player.x, player.y, 500, player.x, player.y, 10, 0, 1, 0);
+    //camera(player.x, player.y, 500, player.x, player.y, 10, 0, 1, 0);
+    camera(playerBody.position.x, playerBody.position.y, 500, playerBody.position.x, playerBody.position.y, 10, 0, 1, 0);
     
     //cam.setPosition(player.x, player.y, 500);
     //cam.lookAt(player.x, player.y, 0);
@@ -213,6 +220,14 @@ window.draw = function() {
     //console.log("camX: " + camera1.eyeX, "camY: " + camera1.eyeY);
     //console.log(grounded);
 
+    // setup animation
+    // advance frame
+    if (frameCount % ANIM_SPEED === 0) {
+	currentFrame = (currentFrame + 1) % FRAMES
+    }
+
+    const sx = currentFrame * FRAME_W
+
     //loop though players and draws them
     for (let id in players) {
 	if (id !== myId) {
@@ -225,6 +240,15 @@ window.draw = function() {
 	    );
 	    // substitute box until i get an animation working
 	    //animation(sprite_sheet, 0, 0, width, height);
+	    // Using p5js animation now.
+	    image(
+		sprite_sheet,
+		    -16, -16,                // destination
+		FRAME_W, FRAME_H,
+		sx, 0,                   // source x/y in sprite sheet
+		FRAME_W, FRAME_H
+	    )
+	    
 	    box();
 	    pop();
 	};
@@ -232,14 +256,22 @@ window.draw = function() {
 
     // play animation at location of camera x y.
     push();
-    translate(max([player.x]), max([player.y]), 1);
+    //translate(max([player.x]), max([player.y]), 1);
+    translate(playerBody.position.x, playerBody.position.y, 1);
     // same here
     //animation(sprite_sheet, 0, 0, width, height);
-    box(player.width, player.height);
+    image(
+	sprite_sheet,
+	    -16, -16,                // destination
+	FRAME_W, FRAME_H,
+	sx, 0,                   // source x/y in sprite sheet
+	FRAME_W, FRAME_H
+    )
+    //box(player.width, player.height);
     // Set text color
     fill(0,0,0)
     // Show text coordinates on player
-    text("vmod/sprint:" + vmod + "\n" + round(player.x) + "\n" + round(player.y), 10, -20); // Round X & Y because floating point errors are annoying
+    text("vmod/sprint:" + vmod + "\n" + round(playerBody.position.x) + "\n" + round(playerBody.position.y), 10, -20); // Round X & Y because floating point errors are annoying
     pop();
 
 
@@ -263,7 +295,7 @@ window.draw = function() {
 let vmod = 1; // Velocity modifier
 window.keyPressed = function() {
     if (keyCode == 8) {
-	spawnCube(player.x, player.y - 200);
+	spawnCube(playerBody.position.x, playerBody.position.y - 200);
     }
     if (keyCode == 16 && vmod == 1) {
 	vmod = 2;
@@ -276,46 +308,52 @@ window.keyPressed = function() {
 function updatePhysics() {
 
     // input
+
+    //player x velocity
+    let velX = 0;
+    if ((keyIsDown(LEFT_ARROW) || keyIsDown("a")) && playerBody.velocity.x >= (-8 * vmod)) velX -= (8 * vmod);
+    if ((keyIsDown(RIGHT_ARROW) || keyIsDown("d")) && playerBody.velocity.x <= (8 * vmod)) velX += (8 * vmod);
     
-    if ((keyIsDown(LEFT_ARROW) || keyIsDown("a")) && player.vx >= (-4 * vmod)) player.vx -= (1 * vmod);
-    if ((keyIsDown(RIGHT_ARROW) || keyIsDown("d")) && player.vx <= (4 * vmod)) player.vx += (1 * vmod);
+    //preserve vertical velocity but move player X
+    Matter.Body.setVelocity(playerBody, {x: velX, y: playerBody.velocity.y});
 
+    //jumping
     if ((keyIsDown(UP_ARROW) || keyIsDown("w") || keyIsDown(" ")) && grounded) {
-	player.vy = (-2 * vmod);
-
+	// player.vy = (-2 * vmod);
+	Matter.Body.setVelocity(playerBody, {x: playerBody.velocity.x, y: -8 * vmod});
     }
 
     // gravity
-    if (!grounded)  player.vy += g;
+    if (!grounded) playerBody.velocity.y += g;
 
     // friction
-    if (player.vx > 0) player.vx = max(0, player.vx - FRICTION);
-    else if (player.vx < 0) player.vx = min(0, player.vx + FRICTION);
+    if (playerBody.velocity.x > 0) playerBody.velocity.x = max(0, playerBody.velocity.x - FRICTION);
+    else if (playerBody.velocity.x < 0) playerBody.velocity.x = min(0, playerBody.velocity.x + FRICTION);
 
     // ---- X AXIS ----
-    player.x += round(player.vx);
+    playerBody.position.x += round(playerBody.velocity.x);
     for(const b of bricks) {
 	if (!playerVsBrick(b)) continue;
 
 	// Player → brick impulse
 	if (offline) {
-	    if (player.vx !== 0) {
+	    if (playerBody.velocity.x !== 0) {
 		Matter.Body.applyForce(
 		    b.body,
 		    b.body.position,
-		    { x: player.vx * 0.0005, y: 0 }
+		    { x: playerBody.velocity.x * 0.0005, y: 0 }
 		);
 	    }
 	}
 
 	// Player stops, brick reacts
-	if (player.vx > 0) {
-	    player.x = b.body.bounds.min.x - player.w / 2;
-	} else if (player.vx < 0) {
-	    player.x = b.body.bounds.max.x + player.w / 2;
+	if (playerBody.velocity.x > 0) {
+	    playerBody.velocity.x = b.body.bounds.min.x - (playerBody.bounds.max.x - playerBody.bounds.min.x) / 2;
+	} else if (playerBody.velocity.x < 0) {
+	    playerBody.position.x = b.body.bounds.max.x + (playerBody.bounds.max.x - playerBody.bounds.min.x) / 2;
 	}
 
-	player.vx = 0;
+	playerBody.velocity.x = 0;
     }
 
 
@@ -325,38 +363,38 @@ function updatePhysics() {
 
 
     // ---- Y AXIS ----
-    const prevY = round(player.y);
-    player.y += player.vy;
+    const prevY = round(playerBody.position.y);
+    playerBody.position.y += playerBody.velocity.y;
 
     for (const b of bricks) {
 	const bounds = b.body.bounds;
 
 	if (
-	    player.vy >= 0 &&
-		player.y <= bounds.min.y &&
-		player.y + player.vy >= bounds.min.y &&
-		player.x > bounds.min.x &&
-		player.x < bounds.max.x
+	    playerBody.velocity.y >= 0 &&
+		playerBody.position.y <= bounds.min.y &&
+		playerBody.position.y + playerBody.velocity.y >= bounds.min.y &&
+		playerBody.position.x > bounds.min.x &&
+		playerBody.position.x < bounds.max.x
 	) {
-	    player.y = bounds.min.y;
-	    player.vy = 0;
+	    playerBody.position.y = bounds.min.y;
+	    playerBody.velocity.y = 0;
 	    grounded = true;
 	}
     }
 
 
     // floor
-    const footY = floorHeight(player.x);
+    const footY = floorHeight(playerBody.position.x);
 
-    if (player.y > footY) {
-	player.y = footY;
+    if (playerBody.position.y > footY) {
+	playerBody.position.y = footY;
 	grounded = true;
     } else {
 	grounded = false;
     }
 
     // Terminal velocity
-    if (player.vy > 130) player.vy = 130;
+    if (playerBody.velocity.y > 130) playerBody.velocity.y = 130;
 
     // box
     // for (const cube of cubes) {
@@ -367,11 +405,11 @@ function updatePhysics() {
 }
 
 // Player collisions (made with love + chat)
-function playerAABB(px = player.x, py = player.y) {
+function playerAABB(px = playerBody.position.x, py = playerBody.position.y) {
     return {
-	minX: px - player.w / 2,
-	maxX: px + player.w / 2,
-	minY: py - player.h,
+	minX: px - (playerBody.bounds.max.x - playerBody.bounds.min.x) / 2,
+	maxX: px + (playerBody.bounds.max.x - playerBody.bounds.min.x) / 2,
+	minY: py - (playerBody.bounds.max.y - playerBody.bounds.min.y),
 	maxY: py
     }
 }
@@ -390,18 +428,18 @@ function resolveXCollision(collider, cube) {
 
     if (!aabbIntersect(p, collider)) return;
 
-    if (player.vx !== 0) {
-	cube.vx += player.vx * 0.2;
+    if (playerBody.velocity.x !== 0) {
+	cube.vx += playerBody.velocity.x * 0.2;
     }
 
-    if (player.vx > 0) {
-	player.x = collider.minX - player.w / 2;
-    } else if (player.vx < 0) {
-	player.x = collider.maxX + player.w / 2;
+    if (playerBody.velocity.x > 0) {
+	playerBody.position.x = collider.minX - (playerBody.bounds.max.x - playerBody.bounds.min.x) / 2;
+    } else if (playerBody.velocity.x < 0) {
+	playerBody.position.x = collider.maxX + (playerBody.bounds.max.x - playerBody.bounds.min.x) / 2;
     }
 
     // player thing
-    player.vx = 0;
+    playerBody.velocity.x = 0;
 
 }
 
@@ -411,9 +449,9 @@ function resolveYCollision(collider, prevY, cube) {
     if (!aabbIntersect(p, collider)) return;
 
     // Landing on top
-    if (player.vy > 0 && prevY <= collider.minY) {
-	player.y = collider.minY;
-	player.vy = 0;
+    if (playerBody.velocity.y > 0 && prevY <= collider.minY) {
+	playerBody.position.y = collider.minY;
+	playerBody.velocity.y = 0;
 	player.grounded = true;
 
 	// pushing the cueb down
@@ -421,9 +459,9 @@ function resolveYCollision(collider, prevY, cube) {
     }
 
     // Hitting head
-    else if (player.vy < 0 && prevY >= collider.maxY) {
-	player.y = collider.maxY + player.h;
-	player.vy = 0;
+    else if (playerBody.velocity.y < 0 && prevY >= collider.maxY) {
+	playerBody.position.y = collider.maxY + (playerBody.bounds.max.y - playerBody.bounds.min.y);
+	playerBody.velocity.y = 0;
 	cube.vy -= 0.5;
 	player.grounded = true;
     }
@@ -443,10 +481,10 @@ function getViewBounds() {
     const viewH = height * 0.6;
 
     return {
-	minX: player.x - viewW,
-	maxX: player.x + viewW,
-	minY: player.y - viewH,
-	maxY: player.y + viewH
+	minX: playerBody.position.x - viewW,
+	maxX: playerBody.position.x + viewW,
+	minY: playerBody.position.y - viewH,
+	maxY: playerBody.position.y + viewH
     };
 }
 
@@ -455,10 +493,10 @@ function playerVsBrick(brick) {
     const b = brick.body.bounds;
 
     return (
-	minX < b.max.x &&
-	    maxX > b.min.x &&
-	    minY < b.max.y &&
-	    maxY > b.min.y
+	p.minX < b.max.x &&
+	    p.maxX > b.min.x &&
+	    p.minY < b.max.y &&
+	    p.maxY > b.min.y
     );
 }
 
@@ -469,8 +507,12 @@ function floorHeight(worldX) {
     const AMP = 60;
     const SCALE = 0.005;
 
-    return BASE + terrainNoise(worldX * SCALE) * AMP;
-
+    if (worldX > 0) {
+	return BASE + terrainNoise(worldX * SCALE) * AMP;
+    } else if (worldX <= 0) {
+	return BASE + terrainNoise(worldX * SCALE) * AMP / 10;
+    }
+    
     // let SCALE; //legacy noise gen
     // let AMP;
     // let BASE
@@ -584,6 +626,10 @@ function connectSocket() {
     socket.onopen = () => {
 	console.log("socket connected");
 	offline = false;
+
+	// delete all local bricks
+	bricks.length = 0;
+	
 	sendState();
 	sendInitialState = true;
     };
@@ -601,21 +647,30 @@ function connectSocket() {
 		if (id !== myId) {
 		    players[id] = msg.players[id];
 		} else {
-		    player.x = lerp(player.x, msg.players[id].x, 0.3)
-		    player.y = lerp(player.y, msg.players[id].y, 0.3)
+		    playerBody.position.x = lerp(playerBody.position.x, msg.players[id].x, 0.3)
+		    playerBody.position.y = lerp(playerBody.position.y, msg.players[id].y, 0.3)
 		}
 	    }
 
-	    //bricks
-	    for (let i = 0; i < bricks.length; i++) {
-		Matter.Body.setPosition(
-		    bricks[i].body,
-		    msg.bricks[i]
-		);
-		Matter.Body.setAngle(
-		    bricks[i].body,
-		    msg.bricks[i].angle
-		);
+	    //rebuild bricks to match server
+	    if(bricks.length !== msg.bricks.length) {
+		bricks.length = 0;
+
+		for (const b of msg.bricks) {
+		    new Brick(b.x, b.y, 50);
+		}
+	    } else {
+		//bricks
+		for (let i = 0; i < bricks.length; i++) {
+		    Matter.Body.setPosition(
+			bricks[i].body,
+			msg.bricks[i]
+		    );
+		    Matter.Body.setAngle(
+			bricks[i].body,
+			msg.bricks[i].angle
+		    );
+		}
 	    }
 	}
 
@@ -669,10 +724,10 @@ function sendState() {
 
 function getInput() {
     return {
-	left: keyIsDown(LEFT_ARROW) || keyIsDown(65),
-	right: keyIsDown(RIGHT_ARROW) || keyIsDown(68),
-	jump: (keyIsDown(UP_ARROW) || keyIsDown(87)),
-	sprint: keyIsDown(16)
+	left: keyIsDown(LEFT_ARROW) || keyIsDown('a'),
+	right: keyIsDown(RIGHT_ARROW) || keyIsDown('d'),
+	jump: (keyIsDown(UP_ARROW) || keyIsDown('w')),
+	sprint: keyIsDown('Shift')
     };
 }
 

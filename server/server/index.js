@@ -17,33 +17,39 @@ const Matter = require("matter-js");
 global.Matter = Matter;
 
 // Set noise function (must match client)
-const createNoise2D  = require("simplex-noise");
+const { createNoise2D } = require("simplex-noise");
 const seedrandom = require("seedrandom");
 
 const SEED = "brick-tower-world"; // ← must match client
 
+// initialize noise function & seed
 const rng = seedrandom(SEED);
-//const noise = new createNoise2D(rng);
+const noise2D = createNoise2D(rng);
 
 function terrainNoise(x) {
-    //return noise(x, 0);
-    return createNoise2D(rng);
+    //return math.random(rng)
+    return noise2D(x, 0);
+    //return createNoise2D(rng);
 }
 
 const {
-  physicsSetup,
-  physicsTick,
-  Brick,
-  bricks,
-  addGroundSpan
+    physicsSetup,
+    physicsTick,
+    Brick,
+    bricks,
+    addGroundSpan
 } = require("./bricks_server.js");
 
-function floorHeight(x) {
-  const BASE = 0;
-  const AMP = 60;
-  const SCALE = 0.005;
+function floorHeight(worldX) {
+    const BASE = 0;
+    const AMP = 60;
+    const SCALE = 0.005;
 
-  return BASE + terrainNoise(x * SCALE) * AMP;
+    if (worldX > 0) {
+	return BASE + terrainNoise(worldX * SCALE) * AMP;
+    } else if (worldX <= 0) {
+	return BASE + terrainNoise(worldX * SCALE) * AMP / 10;
+    }
 }
 
 physicsSetup(floorHeight, { gravity: 1 });
@@ -101,8 +107,8 @@ function broadcastWorldState() {
 	type: "world",
 	players: {},
 	bricks: bricks.map(b => ({
-	    x: b.x,
-	    y: b.y,
+	    x: b.body.position.x,
+	    y: b.body.position.y,
 	    angle: b.body.angle
 	}))
     };
@@ -139,13 +145,13 @@ setInterval(() => {
 }, 1000 / TICK_RATE);
 
 function playerVsBrickServer(p, brick) {
-  const b = brick.body.bounds;
-  return (
-    p.x - 16 < b.max.x &&
-    p.x + 16 > b.min.x &&
-    p.y - 32 < b.max.y &&
-    p.y > b.min.y
-  );
+    const b = brick.body.bounds;
+    return (
+	p.x - 16 < b.max.x &&
+	    p.x + 16 > b.min.x &&
+	    p.y - 32 < b.max.y &&
+	    p.y > b.min.y
+    );
 }
 
 

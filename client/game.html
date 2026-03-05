@@ -5,13 +5,24 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>client</title>
+    <style>
+      body {
+	  margin: 0;
+	  padding: 0;
+	  overflow: hidden; /* Prevents scrollbars */
+      }
+      canvas {
+	  display: block; /* Removes default margin/spacing */
+      }
+
+    </style>
+
   </head>
   <body>
     <div id="app"></div>
-    <!--<script type="module" src="/src/depends/p5.min.js.js"></script>
-    <script type="module" src="/src/depends/planck.min.js.js"></script>
-    <script type="module" src="/src/depends/p5play.js.js"></script>
-    <script type="module" src="/src/depends/bricks.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/p5/lib/p5.min.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/planck/dist/planck.min.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/p5play/lib/p5play.js"></script> -->
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
