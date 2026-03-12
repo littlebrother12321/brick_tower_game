@@ -79,11 +79,24 @@ function spawnPlayer(id) {
 function simulatePlayer(p, dt) {
     const input = p.input;
 
-    if (input.left) p.vx -= 1;
-    if (input.right) p.vx += 1;
+    let vmod = 1;
+
+    if (input.sprint) {
+	switch (vmod) {
+	case 1:
+	    vmod = 2;
+	    break;
+	case 2:
+	    vmod = 1;
+	    break;
+	}
+    }
+    
+    if (input.left) p.vx -= 1 * vmod;
+    if (input.right) p.vx += 1 * vmod;
 
     if (input.jump && p.grounded) {
-	p.vy = -4;
+	p.vy = -4 * vmod;
 	p.grounded = false;
     }
     

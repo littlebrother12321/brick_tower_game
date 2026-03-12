@@ -78,7 +78,6 @@ const playerBody = Matter.Bodies.rectangle(player.x, player.y, player.w, player.
     frictionAir: 0.02,
     frictionStatic: 0,
     restitution: 0,
-    slop: 0.01,
     label: 'player'
 });
 
@@ -249,7 +248,7 @@ window.draw = function() {
 		FRAME_W, FRAME_H
 	    )
 	    
-	    box();
+	    //box();
 	    pop();
 	};
     }
@@ -271,7 +270,7 @@ window.draw = function() {
     // Set text color
     fill(0,0,0)
     // Show text coordinates on player
-    text("vmod/sprint:" + vmod + "\n" + round(playerBody.position.x) + "\n" + round(playerBody.position.y), 10, -20); // Round X & Y because floating point errors are annoying
+    text("vmod/sprint (client):" + vmod + "\n" + round(playerBody.position.x) + "\n" + round(playerBody.position.y), 10, -20); // Round X & Y because floating point errors are annoying
     pop();
 
 
@@ -293,26 +292,46 @@ window.draw = function() {
 // Physics stuff
 
 let vmod = 1; // Velocity modifier
+
 window.keyPressed = function() {
     if (keyCode == 8) {
 	spawnCube(playerBody.position.x, playerBody.position.y - 200);
     }
-    if (keyCode == 16 && vmod == 1) {
-	vmod = 2;
-    } else if ( keyCode == 16 && vmod != 1) {
-	vmod = 1;
-    }
-    //console.log(keyCode);
+    // if (keyCode == 16) {
+    // 	switch (vmod) {
+    // 	    case 1:
+    // 		vmod = 2;
+    // 		break;
+    // 	    case 2:
+    // 		vmod = 1;
+    // 		break;
+    // 	}
+    // }
+    //console.log(keyIsDown('Shift'));
 }
 
 function updatePhysics() {
 
     // input
 
+    vmod = 1;
+    
+    if (keyIsDown('Shift')) {
+	// switch (vmod) {
+	//     case 1:
+	// 	vmod = 2;
+	// 	break;
+	//     case 2:
+	// 	vmod = 1;
+	// 	break;
+	// }
+	vmod = 2;
+    }
+    
     //player x velocity
     let velX = 0;
-    if ((keyIsDown(LEFT_ARROW) || keyIsDown("a")) && playerBody.velocity.x >= (-8 * vmod)) velX -= (8 * vmod);
-    if ((keyIsDown(RIGHT_ARROW) || keyIsDown("d")) && playerBody.velocity.x <= (8 * vmod)) velX += (8 * vmod);
+    if ((keyIsDown(LEFT_ARROW) || keyIsDown("a")) && playerBody.velocity.x >= (-5 * vmod)) velX -= (5 * vmod);
+    if ((keyIsDown(RIGHT_ARROW) || keyIsDown("d")) && playerBody.velocity.x <= (5 * vmod)) velX += (5 * vmod);
     
     //preserve vertical velocity but move player X
     Matter.Body.setVelocity(playerBody, {x: velX, y: playerBody.velocity.y});
@@ -320,7 +339,7 @@ function updatePhysics() {
     //jumping
     if ((keyIsDown(UP_ARROW) || keyIsDown("w") || keyIsDown(" ")) && grounded) {
 	// player.vy = (-2 * vmod);
-	Matter.Body.setVelocity(playerBody, {x: playerBody.velocity.x, y: -8 * vmod});
+	Matter.Body.setVelocity(playerBody, {x: playerBody.velocity.x, y: -2 * vmod});
     }
 
     // gravity
@@ -726,7 +745,7 @@ function getInput() {
     return {
 	left: keyIsDown(LEFT_ARROW) || keyIsDown('a'),
 	right: keyIsDown(RIGHT_ARROW) || keyIsDown('d'),
-	jump: (keyIsDown(UP_ARROW) || keyIsDown('w')),
+	jump: (keyIsDown(UP_ARROW) || keyIsDown('w') || keyIsDown(" ")),
 	sprint: keyIsDown('Shift')
     };
 }
