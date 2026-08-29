@@ -1,0 +1,69 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install",
+			"kdevplatform_add_plugin"
+		],
+		"files" : 
+		[
+			"/usr/lib/cmake/KDevPlatform/KDevPlatformMacros.cmake",
+			"src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 13,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 125,
+				"parent" : 1
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 2,
+			"component" : "jevvvery",
+			"destination" : "lib/qt6/plugins/kdevplatform/64",
+			"paths" : 
+			[
+				"bin/jevvvery.so"
+			],
+			"targetId" : "jevvvery::@145eef247bfb46b6828c",
+			"targetIndex" : 1,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "jevvvery",
+			"cxxModuleBmiTarget" : 
+			{
+				"id" : "jevvvery::@145eef247bfb46b6828c",
+				"index" : 1
+			},
+			"destination" : "lib/qt6/plugins/kdevplatform/64",
+			"type" : "cxxModuleBmi"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "src",
+		"source" : "src"
+	}
+}

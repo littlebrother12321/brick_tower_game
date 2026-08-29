@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/luke/Projects/Web Deb/src/brick_tower_game/jevvvery/build/cmake_install.cmake",
+		"/home/luke/Projects/Web Deb/src/brick_tower_game/jevvvery/build/src/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
